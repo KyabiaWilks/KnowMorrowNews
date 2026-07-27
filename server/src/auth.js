@@ -54,14 +54,16 @@ export function requireAuth(req, _res, next) {
 
 export function requireAdmin(req, _res, next) {
   if (!req.user) return next(new HttpError(401, 'Please sign in with Discord.'));
-  if (req.user.role !== 'admin' && req.user.siteRole !== 'superadmin') {
+  if (!['admin', 'read_only_admin', 'superadmin', 'event_staff'].includes(req.user.siteRole) && req.user.role !== 'admin') {
     return next(new HttpError(403, 'Administrator access required.'));
   }
   next();
 }
 
 export function enforceReadOnly(req, _res, next) {
-  if (req.user?.siteRole === 'event_staff' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+  const readOnly = ['read_only_admin', 'event_staff'].includes(req.user?.siteRole);
+  const officialTransfer = req.method === 'POST' && req.path === '/api/wallet/official-transfer';
+  if (readOnly && !officialTransfer && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next(new HttpError(403, 'Event Staff access is read-only.'));
   }
   next();

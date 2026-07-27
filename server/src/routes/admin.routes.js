@@ -208,7 +208,10 @@ adminRouter.patch(
   wrap((req, res) => {
     const u = db.users.find((x) => x.id === req.params.id);
     if (!u) throw missing('用户不存在');
-    if (req.body.role && ['user', 'admin'].includes(req.body.role)) u.role = req.body.role;
+    if (req.body.siteRole && ['user', 'journalist', 'admin', 'read_only_admin'].includes(req.body.siteRole)) {
+      u.siteRole = req.body.siteRole;
+      u.role = req.body.siteRole === 'admin' ? 'admin' : 'user';
+    }
     if (req.body.banned !== undefined) {
       u.banned = !!req.body.banned;
       u.banReason = req.body.banned ? String(req.body.banReason || '管理员处置') : null;

@@ -21,6 +21,7 @@ const EMPTY = {
   tomatoes: [],
   transactions: [],
   auditLog: [],
+  notifications: [],
 };
 
 if (!config.databaseUrl) {

@@ -76,6 +76,11 @@ export function payFromEscrow(payer, payee, amount, ref, memo = '委托结算') 
 
 export function publicUser(user) {
   if (!user) return null;
+  const siteRole = user.siteRole === 'superadmin'
+    ? 'admin'
+    : user.siteRole === 'event_staff'
+      ? 'read_only_admin'
+      : user.siteRole || (user.role === 'admin' ? 'admin' : 'user');
   return {
     id: user.id,
     username: user.username,
@@ -86,8 +91,8 @@ export function publicUser(user) {
     createdAt: user.createdAt,
     wallet: walletOf(user),
     profileCount: db.profiles.filter((p) => p.userId === user.id && !p.retired).length,
-    siteRole: user.siteRole || (user.role === 'admin' ? 'superadmin' : 'reader'),
-    readOnly: user.siteRole === 'event_staff',
+    siteRole,
+    readOnly: siteRole === 'read_only_admin',
   };
 }
 
@@ -157,7 +162,7 @@ const REQUEST_EN = {
  * @param {boolean} reveal      true = 无视付费墙（仅 ghost / 作者本人 / 管理员仲裁）
  */
 export function publicOffer(offer, viewer, reveal = false) {
-  reveal = reveal || viewer?.siteRole === 'event_staff' || viewer?.siteRole === 'superadmin';
+  reveal = reveal || ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(viewer?.siteRole);
   const isOwner = viewer && userOfProfile(offer.profileId)?.id === viewer.id;
   const tiers = offer.tiers.map((t) => {
     const unlocked = reveal || isOwner || (viewer ? hasUnlocked(viewer.id, offer.id, t.id) : false);
@@ -190,7 +195,7 @@ export function publicOffer(offer, viewer, reveal = false) {
 }
 
 export function publicRequest(request, viewer, reveal = false) {
-  reveal = reveal || viewer?.siteRole === 'event_staff' || viewer?.siteRole === 'superadmin';
+  reveal = reveal || ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(viewer?.siteRole);
   const isOwner = viewer && userOfProfile(request.profileId)?.id === viewer.id;
   const subs = db.submissions.filter((s) => s.requestId === request.id);
   return {

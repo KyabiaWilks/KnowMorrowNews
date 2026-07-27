@@ -21,12 +21,13 @@ import WalletPage from './pages/WalletPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/admin/AdminPage';
 import GhostPage from './pages/ghost/GhostPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function RequireAuth({ children, admin }: { children: JSX.Element; admin?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (admin && user.role !== 'admin') return <Navigate to="/" replace />;
+  if (admin && !['admin', 'read_only_admin'].includes(user.siteRole)) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -83,6 +84,7 @@ export default function App() {
             }
           />
           <Route path="login" element={<LoginPage />} />
+          <Route path="notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
           <Route
             path="admin/*"
             element={

@@ -16,6 +16,7 @@ import {
   hasUnlocked,
 } from '../services.js';
 import { bad, matchText, missing, now, paginate, uid, wrap, HttpError } from '../util.js';
+import { notify } from '../notifications.js';
 
 export const tavernRouter = Router();
 
@@ -410,6 +411,15 @@ tavernRouter.post(
       createdAt: now(),
     };
     db.submissions.unshift(submission);
+    const requestOwner = userOfProfile(request.profileId);
+    if (requestOwner) {
+      notify(requestOwner.id, {
+        type: 'newsroom_reply',
+        title: 'New reply to your reporting request',
+        message: `A contributor replied to “${request.title}” under the ${tier.name} reward tier.`,
+        href: `/tavern/requests/${request.id}`,
+      });
+    }
     save();
     res.json({ request: publicRequest(request, req.user) });
   })
@@ -431,6 +441,13 @@ tavernRouter.post(
     if (action === 'reject') {
       submission.status = 'rejected';
       submission.rejectReason = String(req.body.reason || '').slice(0, 200);
+      const supplier = userOfProfile(submission.profileId);
+      if (supplier) notify(supplier.id, {
+        type: 'submission_update',
+        title: 'Newsroom submission updated',
+        message: `Your reply to “${request.title}” was not accepted.`,
+        href: `/tavern/requests/${request.id}`,
+      });
       save();
       return res.json({ request: publicRequest(request, req.user) });
     }
@@ -442,6 +459,12 @@ tavernRouter.post(
     request.depositRemaining -= tier.price;
     submission.status = 'accepted';
     submission.paid = tier.price;
+    notify(supplier.id, {
+      type: 'submission_update',
+      title: 'Newsroom submission accepted',
+      message: `Your reply to “${request.title}” was accepted. ${tier.price} TMT has been released to your wallet.`,
+      href: `/tavern/requests/${request.id}`,
+    });
 
     const sp = profileById(submission.profileId);
     if (sp) {

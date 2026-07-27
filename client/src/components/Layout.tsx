@@ -1,6 +1,7 @@
 import { NavLink, Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { TomatoLayer, TomatoToolbar } from './TomatoLayer';
+import { NotificationBell } from './NotificationBell';
 
 const NAV = [
   { to: '/', label: 'Front Page', end: true },
@@ -23,16 +24,17 @@ export function Layout() {
           </Link>
           <nav className="nav" aria-label="Primary navigation">
             {NAV.map((item) => <NavLink key={item.to} to={item.to} end={item.end}>{item.label}</NavLink>)}
-            {user?.role === 'admin' && <NavLink to="/admin">Editor’s Desk</NavLink>}
+            {user && ['admin', 'read_only_admin'].includes(user.siteRole) && <NavLink to="/admin">Editor’s Desk</NavLink>}
           </nav>
           <div className="masthead__right">
             {user ? (
               <>
                 <Link to="/wallet" className="coin-pill">🍅 {user.wallet.coins.toLocaleString('en-US')}</Link>
+                <NotificationBell />
                 <Link to="/masks" className="btn btn--sm">
                   {user.displayName}
-                  {user.siteRole !== 'reader' && <span className="role-label">
-                    {user.siteRole === 'superadmin' ? 'Supreme Admin' : user.siteRole === 'event_staff' ? 'Event Staff · Read only' : 'Journalist'}
+                  {user.siteRole !== 'user' && <span className="role-label">
+                    {user.siteRole === 'admin' ? 'Administrator' : user.siteRole === 'read_only_admin' ? 'Read-only administrator' : 'Journalist'}
                   </span>}
                 </Link>
                 <button className="btn btn--sm btn--ghost" onClick={logout}>Sign out</button>

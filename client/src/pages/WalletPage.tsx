@@ -19,6 +19,9 @@ const KIND_LABEL: Record<string, string> = {
   freeze: 'Arbitration freeze',
   arbitration_debit: 'Arbitration debit',
   arbitration_credit: 'Arbitration award',
+  user_transfer_out: 'Transfer sent',
+  user_transfer_in: 'Transfer received',
+  official_transfer: 'Official transfer',
 };
 
 const KIND_DESCRIPTION: Record<string, string> = {
@@ -37,21 +40,30 @@ const KIND_DESCRIPTION: Record<string, string> = {
 };
 
 export default function WalletPage() {
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
   const toast = useToast();
   const [data, setData] = useState<{ wallet: Wallet; transactions: Transaction[] } | null>(null);
+  const [transfer, setTransfer] = useState({ username: '', amount: 1 });
+  const [official, setOfficial] = useState({ username: '', amount: 100, memo: '' });
+  const [busy, setBusy] = useState(false);
   const load = () => get<{ wallet: Wallet; transactions: Transaction[] }>('/wallet').then(setData);
 
   useEffect(() => { void load(); }, []);
 
-  const topup = async (amount: number) => {
+  const sendTransfer = async (officialTransfer = false) => {
+    setBusy(true);
     try {
-      await post('/wallet/topup', { amount });
-      toast.push(`Added ${amount} TMT`, 'good');
+      const payload = officialTransfer ? official : transfer;
+      await post(officialTransfer ? '/wallet/official-transfer' : '/wallet/transfer', payload);
+      toast.push(officialTransfer ? 'Official transfer sent.' : 'Transfer sent.', 'good');
+      if (officialTransfer) setOfficial({ username: '', amount: 100, memo: '' });
+      else setTransfer({ username: '', amount: 1 });
       await load();
       await refresh();
     } catch (err) {
       toast.push((err as Error).message, 'bad');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -63,10 +75,6 @@ export default function WalletPage() {
         <div className="eyebrow">TOMATO COIN</div>
         <h1 className="page-title">My Tomato Wallet</h1>
         <div className="page-sub">Throw TMT across the newsroom, or spend it on information someone would rather keep quiet.</div>
-      </div>
-      <div className="row">
-        <button className="btn" onClick={() => topup(100)}>+100 TMT</button>
-        <button className="btn btn--tomato" onClick={() => topup(500)}>+500 TMT · Demo faucet</button>
       </div>
     </div>
 
@@ -80,6 +88,23 @@ export default function WalletPage() {
     {data.wallet.frozen > 0 && <div className="notice-banner" style={{ borderColor: 'var(--bad)', background: '#fdecea', color: '#8c2c1d' }}>
       {tmt(data.wallet.frozen)} is frozen by arbitration and cannot be spent until a decision is enforced.
     </div>}
+
+    <div className="grid grid--2">
+      <section className="card card--pad stack">
+        <div><div className="eyebrow">PERSON-TO-PERSON</div><h2>Send Tomato Coin</h2></div>
+        <label className="field"><span>Recipient username</span><input className="input" value={transfer.username} onChange={(event) => setTransfer({ ...transfer, username: event.target.value })} placeholder="discord_username" /></label>
+        <label className="field"><span>Amount</span><input className="input" type="number" min={1} max={100000} value={transfer.amount} onChange={(event) => setTransfer({ ...transfer, amount: Number(event.target.value) })} /></label>
+        <button className="btn btn--primary" disabled={busy || !transfer.username || transfer.amount < 1} onClick={() => sendTransfer(false)}>Send {tmt(transfer.amount)}</button>
+      </section>
+
+      {['admin', 'read_only_admin'].includes(user?.siteRole || '') && <section className="card card--pad stack">
+        <div><div className="eyebrow">OFFICIAL TRANSFER</div><h2>Issue Newsroom Funds</h2></div>
+        <label className="field"><span>Recipient username</span><input className="input" value={official.username} onChange={(event) => setOfficial({ ...official, username: event.target.value })} /></label>
+        <label className="field"><span>Amount</span><input className="input" type="number" min={1} max={1000000} value={official.amount} onChange={(event) => setOfficial({ ...official, amount: Number(event.target.value) })} /></label>
+        <label className="field"><span>Official memo</span><input className="input" value={official.memo} onChange={(event) => setOfficial({ ...official, memo: event.target.value })} placeholder="Newsroom allocation" /></label>
+        <button className="btn btn--tomato" disabled={busy || !official.username || official.amount < 1} onClick={() => sendTransfer(true)}>Issue {tmt(official.amount)}</button>
+      </section>}
+    </div>
 
     <div className="card card--pad">
       <div className="eyebrow" style={{ marginBottom: 10 }}>TRANSACTION HISTORY</div>

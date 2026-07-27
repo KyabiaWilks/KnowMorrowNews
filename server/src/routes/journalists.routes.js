@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { matchText, missing, wrap } from '../util.js';
+import { save } from '../db.js';
+import { requireAuth } from '../auth.js';
+import { bad, matchText, missing, wrap } from '../util.js';
 
 export const journalistsRouter = Router();
 
@@ -54,6 +56,35 @@ journalistsRouter.get(
   })
 );
 
+journalistsRouter.get('/me/profile', requireAuth, wrap((req, res) => {
+  const journalist = db.journalists.find((item) => item.userId === req.user.id);
+  if (!journalist) throw missing('No reporter profile is linked to this account.');
+  res.json({ journalist: englishJournalist(journalist) });
+}));
+
+journalistsRouter.patch('/me/profile', requireAuth, wrap((req, res) => {
+  if (req.user.siteRole !== 'journalist' && req.user.siteRole !== 'admin' && req.user.role !== 'admin') {
+    throw bad('Reporter access required.');
+  }
+  const journalist = db.journalists.find((item) => item.userId === req.user.id);
+  if (!journalist) throw missing('No reporter profile is linked to this account.');
+  const textLimits = { name: 48, title: 80, tagline: 180, bio: 1600, contact: 120, avatar: 500 };
+  for (const [field, limit] of Object.entries(textLimits)) {
+    if (req.body[field] !== undefined) journalist[field] = String(req.body[field] || '').trim().slice(0, limit) || (field === 'contact' || field === 'avatar' ? null : journalist[field]);
+  }
+  if (req.body.portraitTone !== undefined) {
+    const color = String(req.body.portraitTone);
+    if (!/^#[0-9a-f]{6}$/i.test(color)) throw bad('Portrait color must be a six-digit hex color.');
+    journalist.portraitTone = color;
+  }
+  if (req.body.beats !== undefined) {
+    const beats = Array.isArray(req.body.beats) ? req.body.beats : String(req.body.beats).split(',');
+    journalist.beats = beats.map((item) => String(item).trim().slice(0, 40)).filter(Boolean).slice(0, 8);
+  }
+  save();
+  res.json({ journalist: englishJournalist(journalist) });
+}));
+
 journalistsRouter.get(
   '/:id',
   wrap((req, res) => {
@@ -76,6 +107,8 @@ journalistsRouter.get(
           article: db.news.find((a) => a.id === w.newsId) ? { id: w.newsId, title: STORY_EN[w.newsId]?.[0] || db.news.find((a) => a.id === w.newsId).title } : null,
         })),
         contact: j.contact || null,
+        avatar: j.avatar || null,
+        canEdit: !!req.user && j.userId === req.user.id,
         stats: {
           stories: stories.length,
           totalViews: stories.reduce((s, a) => s + a.views, 0),

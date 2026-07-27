@@ -10,7 +10,7 @@ export type User = {
   createdAt: string;
   wallet: Wallet;
   profileCount: number;
-  siteRole: 'reader' | 'journalist' | 'event_staff' | 'superadmin';
+  siteRole: 'user' | 'journalist' | 'admin' | 'read_only_admin';
   readOnly: boolean;
 };
 
@@ -149,3 +149,13 @@ export type Tomato = {
 };
 
 export type Transaction = { id: string; delta: number; kind: string; memo: string; createdAt: string };
+
+export type Notification = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  href: string | null;
+  readAt: string | null;
+  createdAt: string;
+};

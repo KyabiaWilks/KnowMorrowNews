@@ -49,7 +49,7 @@ tomatoRouter.delete('/:id', requireAuth, wrap((req, res) => {
   const index = db.tomatoes.findIndex((tomato) => tomato.id === req.params.id);
   if (index < 0) throw missing('That tomato no longer exists.');
   const tomato = db.tomatoes[index];
-  if (tomato.userId !== req.user.id && req.user.siteRole !== 'superadmin') throw new HttpError(403, 'You can only remove your own tomatoes.');
+  if (tomato.userId !== req.user.id && req.user.siteRole !== 'admin' && req.user.role !== 'admin') throw new HttpError(403, 'You can only remove your own tomatoes.');
   db.tomatoes.splice(index, 1);
   save();
   res.json({ ok: true });

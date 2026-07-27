@@ -83,12 +83,14 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
     }
   }
   const siteRole = String(profile.username || '').toLowerCase() === config.supremeDiscordUsername.toLowerCase()
-    ? 'superadmin'
+    ? 'admin'
     : roleNames.includes('event staff')
-        ? 'event_staff'
+        ? 'read_only_admin'
+        : roleNames.includes('administrator') || roleNames.includes('admin')
+          ? 'admin'
         : roleNames.includes('tomato')
           ? 'journalist'
-          : 'reader';
+          : 'user';
   let user = db.users.find((item) => item.discordId === profile.id);
   if (!user) {
     const base = String(profile.username || 'reader').replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 18) || 'reader';
@@ -99,7 +101,7 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
       id: uid('usr'), discordId: profile.id, username,
       displayName: profile.global_name || profile.username || 'Discord Reader',
       password: hashPassword(crypto.randomBytes(32).toString('hex')),
-      role: siteRole === 'superadmin' ? 'admin' : 'user', siteRole,
+      role: siteRole === 'admin' ? 'admin' : 'user', siteRole,
       discordUsername: profile.username, discordRoles: roleNames,
       coins: WELCOME_COINS, escrow: 0, frozenFunds: 0,
       banned: false, banReason: null, noticeAckedAt: null, createdAt: now(),
@@ -112,7 +114,27 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
   user.discordUsername = profile.username;
   user.discordRoles = roleNames;
   user.siteRole = siteRole;
-  user.role = siteRole === 'superadmin' ? 'admin' : 'user';
+  user.role = siteRole === 'admin' ? 'admin' : 'user';
+  if (siteRole === 'journalist' && !db.journalists.some((item) => item.userId === user.id)) {
+    db.journalists.push({
+      id: `jnl_${user.id.replace(/^usr_/, '')}`,
+      userId: user.id,
+      name: user.displayName,
+      title: 'Staff Reporter',
+      avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=512` : null,
+      portraitTone: '#2f6bff',
+      tagline: 'Every detail has a witness.',
+      bio: 'This reporter joined Know Morrow through the Tomato press corps.',
+      beats: ['General Assignment'],
+      awards: [],
+      milestones: [{ year: new Date().getFullYear(), text: 'Joined the Know Morrow press corps' }],
+      signatureWorks: [],
+      contact: null,
+      featured: false,
+      hidden: false,
+      joinedAt: now(),
+    });
+  }
   save();
   if (user.banned) throw new HttpError(403, 'This account has been suspended.');
   res.redirect(`${config.clientOrigin}/login#discord_token=${encodeURIComponent(issueToken(user))}`);

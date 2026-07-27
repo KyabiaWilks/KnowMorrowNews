@@ -723,6 +723,45 @@ button.chip:hover {
   cursor: pointer;
 }
 
+.notification-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  text-decoration: none;
+}
+
+.notification-bell__count {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--tomato);
+  color: #fff;
+  font: 700 9px/1 var(--mono);
+}
+
+.notification-item {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.notification-item--unread {
+  border-left: 4px solid var(--blue-500);
+  background: var(--blue-50);
+}
+
 .tomato:disabled { opacity: 1; cursor: default; }
 
 @keyframes splat {
@@ -962,6 +1001,16 @@ button.chip:hover {
 
 .portrait-flip__initial {
   font: 800 58px/1 var(--serif);
+}
+
+.portrait-flip__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reporter-editor {
+  border-top: 4px solid var(--blue-500);
 }
 
 .portrait-flip__hint {
