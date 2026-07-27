@@ -1,0 +1,31 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { get } from '../../lib/api';
+import type { BountyRequest, Offer } from '../../lib/types';
+import { Empty, Spinner } from '../../components/ui';
+import { fmtTime, tmt } from '../../lib/format';
+import { useAuth } from '../../context/AuthContext';
+
+type Desk = { offers: Offer[]; requests: BountyRequest[]; purchases: { id: string; amount: number; createdAt: string; offerId: string; offerTitle: string; tierName: string }[]; submissions: { id: string; requestId: string; requestTitle: string; status: string; paid: number; createdAt: string }[] };
+type MyReport = { id: string; targetType: string; reason: string; status: string; createdAt: string; verdict: string | null };
+const TABS = [{ id: 'selling', label: 'My listings' }, { id: 'buying', label: 'My requests' }, { id: 'unlocked', label: 'Unlocked tips' }, { id: 'submitted', label: 'My submissions' }, { id: 'reports', label: 'My reports' }] as const;
+
+export default function DeskPage() {
+  const { user } = useAuth();
+  const [tab, setTab] = useState<(typeof TABS)[number]['id']>('selling');
+  const [desk, setDesk] = useState<Desk | null>(null);
+  const [reports, setReports] = useState<MyReport[]>([]);
+  useEffect(() => { void get<Desk>('/tavern/me/desk').then(setDesk); void get<{ items: MyReport[] }>('/tavern/reports/mine').then((result) => setReports(result.items)); }, []);
+  if (!desk) return <div className="tavern"><Spinner /></div>;
+  const status = (value: string) => value === 'accepted' ? 'Accepted' : value === 'rejected' ? 'Declined' : value === 'upheld' ? 'Upheld' : value === 'dismissed' ? 'Dismissed' : 'Pending';
+  return <div className="tavern stack" style={{ gap: 18 }}>
+    <div className="page-head"><div><div className="eyebrow">MY DESK</div><h1 className="page-title" style={{ color: '#f2f6ff' }}>My Desk</h1><div className="page-sub" style={{ color: '#8ba4cf' }}>A private view of activity across every mask attached to your account.</div></div>{!user?.readOnly && <Link to="/tavern/compose" className="btn btn--primary">＋ Post a new lead</Link>}</div>
+    {user?.readOnly && <div className="notice-banner">Event Staff access is read-only. You may inspect every item, but you cannot post, purchase, report or settle transactions.</div>}
+    <div className="row" style={{ gap: 4 }}>{TABS.map((item) => <button key={item.id} className={`chip ${tab === item.id ? 'chip--on' : ''}`} onClick={() => setTab(item.id)}>{item.label}</button>)}</div>
+    {tab === 'selling' && <div className="card card--pad">{desk.offers.length === 0 ? <Empty icon="📜" title="You have no active listings" /> : <table className="table"><thead><tr><th>Title</th><th>Mask</th><th>Tiers</th><th>Sales</th><th>Revenue</th><th>Status</th></tr></thead><tbody>{desk.offers.map((offer) => <tr key={offer.id}><td><Link to={`/tavern/offers/${offer.id}`}>{offer.title}</Link></td><td>{offer.seller.sigil} {offer.seller.alias}</td><td>{offer.tiers.length}</td><td>{offer.tiers.reduce((sum, tier) => sum + tier.buyers, 0)}</td><td>{tmt(offer.tiers.reduce((sum, tier) => sum + tier.buyers * tier.price, 0))}</td><td><span className={`chip ${offer.status === 'open' ? 'chip--good' : 'chip--danger'}`}>{offer.status === 'open' ? 'Listed' : 'Closed'}</span></td></tr>)}</tbody></table>}</div>}
+    {tab === 'buying' && <div className="card card--pad">{desk.requests.length === 0 ? <Empty icon="📌" title="You have not posted a request" /> : <table className="table"><thead><tr><th>Request</th><th>Mask</th><th>Escrow</th><th>Submissions</th><th>Status</th></tr></thead><tbody>{desk.requests.map((request) => <tr key={request.id}><td><Link to={`/tavern/requests/${request.id}`}>{request.title}</Link></td><td>{request.buyer.sigil} {request.buyer.alias}</td><td>{tmt(request.deposit)}</td><td>{request.submissionCount}{request.submissions.some((item) => item.status === 'pending') && <span className="chip chip--warn" style={{ marginLeft: 6 }}>Needs review</span>}</td><td><span className={`chip ${request.status === 'open' ? 'chip--good' : ''}`}>{request.status === 'open' ? 'Open' : 'Closed'}</span></td></tr>)}</tbody></table>}</div>}
+    {tab === 'unlocked' && <div className="card card--pad">{desk.purchases.length === 0 ? <Empty icon="🔓" title="You have not unlocked any tips" /> : <table className="table"><thead><tr><th>Date</th><th>Tip</th><th>Tier</th><th>Cost</th></tr></thead><tbody>{desk.purchases.map((purchase) => <tr key={purchase.id}><td className="mono">{fmtTime(purchase.createdAt)}</td><td><Link to={`/tavern/offers/${purchase.offerId}`}>{purchase.offerTitle}</Link></td><td>{purchase.tierName}</td><td>{tmt(purchase.amount)}</td></tr>)}</tbody></table>}</div>}
+    {tab === 'submitted' && <div className="card card--pad">{desk.submissions.length === 0 ? <Empty icon="✉️" title="You have not answered a request" /> : <table className="table"><thead><tr><th>Date</th><th>Request</th><th>Status</th><th>Paid</th></tr></thead><tbody>{desk.submissions.map((submission) => <tr key={submission.id}><td className="mono">{fmtTime(submission.createdAt)}</td><td><Link to={`/tavern/requests/${submission.requestId}`}>{submission.requestTitle}</Link></td><td><span className={`chip ${submission.status === 'accepted' ? 'chip--good' : submission.status === 'rejected' ? 'chip--danger' : 'chip--warn'}`}>{status(submission.status)}</span></td><td>{tmt(submission.paid)}</td></tr>)}</tbody></table>}</div>}
+    {tab === 'reports' && <div className="card card--pad">{reports.length === 0 ? <Empty icon="⚠️" title="You have not filed any reports" /> : <table className="table"><thead><tr><th>Date</th><th>Target</th><th>Reason</th><th>Status</th><th>Decision</th></tr></thead><tbody>{reports.map((report) => <tr key={report.id}><td className="mono">{fmtTime(report.createdAt)}</td><td>{{ offer: 'Tip', request: 'Request', submission: 'Submission', profile: 'Mask' }[report.targetType] || report.targetType}</td><td>{report.reason}</td><td><span className={`chip ${report.status === 'upheld' ? 'chip--good' : report.status === 'dismissed' ? 'chip--danger' : 'chip--warn'}`}>{status(report.status)}</span></td><td className="muted">{report.verdict || '—'}</td></tr>)}</tbody></table>}</div>}
+  </div>;
+}

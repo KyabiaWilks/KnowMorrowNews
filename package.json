@@ -1,0 +1,23 @@
+{
+  "name": "jontop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "JONTOP — 地平线月报：新闻、记者展廊与匿名情报酒馆",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "setup": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -n server,client -c blue,cyan \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "seed": "npm --prefix server run seed",
+    "reset": "npm --prefix server run seed -- --force"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
