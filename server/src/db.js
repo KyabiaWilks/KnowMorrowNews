@@ -46,7 +46,19 @@ async function initialize() {
 
   const result = await pool.query('SELECT payload FROM app_state WHERE id = 1');
   if (result.rows[0]) {
-    return { ...structuredClone(EMPTY), ...result.rows[0].payload };
+    const loaded = { ...structuredClone(EMPTY), ...result.rows[0].payload };
+    let migrated = false;
+    for (const user of loaded.users) {
+      if (user.discordId && user.discordUsername && user.username !== user.discordUsername) {
+        user.username = user.discordUsername;
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      await pool.query('UPDATE app_state SET payload = $1::jsonb, updated_at = now() WHERE id = 1', [JSON.stringify(loaded)]);
+      console.log('[db] Migrated Discord user IDs to full Discord usernames.');
+    }
+    return loaded;
   }
 
   let initial = structuredClone(EMPTY);

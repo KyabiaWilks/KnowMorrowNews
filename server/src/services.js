@@ -91,6 +91,10 @@ export function publicUser(user) {
     createdAt: user.createdAt,
     wallet: walletOf(user),
     profileCount: db.profiles.filter((p) => p.userId === user.id && !p.retired).length,
+    minecraftId: user.minecraftId || null,
+    minecraftUuid: user.minecraftUuid || null,
+    avatar: user.discordAvatar || (user.minecraftUuid ? `https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay` : null),
+    discordId: user.discordId || null,
     siteRole,
     readOnly: siteRole === 'read_only_admin',
   };

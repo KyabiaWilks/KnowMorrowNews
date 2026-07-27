@@ -12,6 +12,10 @@ export type User = {
   profileCount: number;
   siteRole: 'user' | 'journalist' | 'admin' | 'read_only_admin';
   readOnly: boolean;
+  minecraftId: string | null;
+  minecraftUuid: string | null;
+  avatar: string | null;
+  discordId: string | null;
 };
 
 export type Mask = {

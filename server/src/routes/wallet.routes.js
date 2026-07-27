@@ -7,6 +7,39 @@ import { bad, now, uid, wrap } from '../util.js';
 
 export const walletRouter = Router();
 
+walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
+  const query = String(req.query.q || '').trim().toLowerCase();
+  if (query.length < 2) return res.json({ items: [] });
+  const items = db.users
+    .filter((user) => user.id !== req.user.id && !user.banned)
+    .map((user) => {
+      const masks = db.profiles.filter((profile) => profile.userId === user.id && !profile.retired);
+      const matchedMask = masks.find((profile) => profile.alias.toLowerCase().includes(query));
+      const fields = [
+        ['User ID', user.username],
+        ['Nickname', user.displayName],
+        ['MC ID', user.minecraftId],
+        ['Internal ID', user.id],
+      ];
+      const matchedField = fields.find(([, value]) => String(value || '').toLowerCase().includes(query));
+      if (!matchedField && !matchedMask) return null;
+      return {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        minecraftId: user.minecraftId || null,
+        minecraftUuid: user.minecraftUuid || null,
+        avatar: user.discordAvatar || (user.minecraftUuid ? `https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay` : null),
+        matchedBy: matchedMask ? `Mask · ${matchedMask.alias}` : matchedField[0],
+        mask: matchedMask ? { alias: matchedMask.alias, sigil: matchedMask.sigil } : null,
+        nameMcUrl: user.minecraftUuid ? `https://namemc.com/profile/${user.minecraftUuid}` : null,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 12);
+  res.json({ items });
+}));
+
 walletRouter.get(
   '/',
   requireAuth,
@@ -41,7 +74,9 @@ walletRouter.post(
 walletRouter.post('/transfer', requireAuth, wrap((req, res) => {
   const username = String(req.body.username || '').trim().toLowerCase();
   const amount = Math.floor(Number(req.body.amount));
-  const recipient = db.users.find((item) => item.username.toLowerCase() === username);
+  const recipient = req.body.recipientId
+    ? db.users.find((item) => item.id === req.body.recipientId)
+    : db.users.find((item) => item.username.toLowerCase() === username);
   if (!recipient) throw bad('Recipient not found.');
   if (recipient.id === req.user.id) throw bad('You cannot transfer funds to yourself.');
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) throw bad('Transfer amount must be between 1 and 100,000 TMT.');
@@ -63,7 +98,9 @@ walletRouter.post('/transfer', requireAuth, wrap((req, res) => {
 walletRouter.post('/official-transfer', requireAuth, requireAdmin, wrap((req, res) => {
   const username = String(req.body.username || '').trim().toLowerCase();
   const amount = Math.floor(Number(req.body.amount));
-  const recipient = db.users.find((item) => item.username.toLowerCase() === username);
+  const recipient = req.body.recipientId
+    ? db.users.find((item) => item.id === req.body.recipientId)
+    : db.users.find((item) => item.username.toLowerCase() === username);
   if (!recipient) throw bad('Recipient not found.');
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) throw bad('Official transfer must be between 1 and 1,000,000 TMT.');
   const memo = String(req.body.memo || 'Official newsroom allocation').trim().slice(0, 160);

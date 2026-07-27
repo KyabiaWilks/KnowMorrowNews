@@ -93,16 +93,15 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
           : 'user';
   let user = db.users.find((item) => item.discordId === profile.id);
   if (!user) {
-    const base = String(profile.username || 'reader').replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 18) || 'reader';
-    let username = `discord_${base}`.slice(0, 24);
-    let suffix = 1;
-    while (db.users.some((item) => item.username.toLowerCase() === username.toLowerCase())) username = `${base.slice(0, 18)}_${suffix++}`.slice(0, 24);
+    const username = String(profile.username || profile.id);
     user = {
       id: uid('usr'), discordId: profile.id, username,
       displayName: profile.global_name || profile.username || 'Discord Reader',
       password: hashPassword(crypto.randomBytes(32).toString('hex')),
       role: siteRole === 'admin' ? 'admin' : 'user', siteRole,
-      discordUsername: profile.username, discordRoles: roleNames,
+      discordUsername: profile.username,
+      discordAvatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=128` : null,
+      discordRoles: roleNames,
       coins: WELCOME_COINS, escrow: 0, frozenFunds: 0,
       banned: false, banReason: null, noticeAckedAt: null, createdAt: now(),
     };
@@ -111,7 +110,9 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
     save();
   }
   user.displayName = member.nick || profile.global_name || profile.username || user.displayName;
+  user.username = profile.username;
   user.discordUsername = profile.username;
+  user.discordAvatar = profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=128` : null;
   user.discordRoles = roleNames;
   user.siteRole = siteRole;
   user.role = siteRole === 'admin' ? 'admin' : 'user';
@@ -205,7 +206,7 @@ authRouter.post(
 authRouter.patch(
   '/me',
   requireAuth,
-  wrap((req, res) => {
+  wrap(async (req, res) => {
     if (req.body.displayName !== undefined) {
       const name = String(req.body.displayName).trim();
       if (name.length < 1 || name.length > 32) throw bad('昵称长度需在 1-32 之间');
@@ -215,6 +216,20 @@ authRouter.patch(
       if (!verifyPassword(String(req.body.currentPassword || ''), req.user.password)) throw bad('当前密码不正确');
       if (String(req.body.newPassword).length < 6) throw bad('新密码至少 6 位');
       req.user.password = hashPassword(String(req.body.newPassword));
+    }
+    if (req.body.minecraftId !== undefined) {
+      const minecraftId = String(req.body.minecraftId || '').trim();
+      if (!minecraftId) {
+        req.user.minecraftId = null;
+        req.user.minecraftUuid = null;
+      } else {
+        if (!/^[A-Za-z0-9_]{3,16}$/.test(minecraftId)) throw bad('Minecraft ID must be 3–16 letters, numbers or underscores.');
+        const lookup = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(minecraftId)}`);
+        if (!lookup.ok) throw bad('That Minecraft Java profile could not be verified.');
+        const minecraft = await lookup.json();
+        req.user.minecraftId = minecraft.name;
+        req.user.minecraftUuid = minecraft.id;
+      }
     }
     save();
     res.json({ user: publicUser(req.user) });

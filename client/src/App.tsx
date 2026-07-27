@@ -22,6 +22,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/admin/AdminPage';
 import GhostPage from './pages/ghost/GhostPage';
 import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function RequireAuth({ children, admin }: { children: JSX.Element; admin?: boolean }) {
   const { user, loading } = useAuth();
@@ -85,6 +86,7 @@ export default function App() {
           />
           <Route path="login" element={<LoginPage />} />
           <Route path="notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+          <Route path="profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route
             path="admin/*"
             element={

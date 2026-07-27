@@ -31,7 +31,7 @@ export function Layout() {
               <>
                 <Link to="/wallet" className="coin-pill">🍅 {user.wallet.coins.toLocaleString('en-US')}</Link>
                 <NotificationBell />
-                <Link to="/masks" className="btn btn--sm">
+                <Link to="/profile" className="btn btn--sm">
                   {user.displayName}
                   {user.siteRole !== 'user' && <span className="role-label">
                     {user.siteRole === 'admin' ? 'Administrator' : user.siteRole === 'read_only_admin' ? 'Read-only administrator' : 'Journalist'}

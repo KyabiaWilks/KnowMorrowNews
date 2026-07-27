@@ -5,6 +5,7 @@ import { Spinner, Stat } from '../components/ui';
 import { fmtTime, tmt } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { RecipientSearch, type RecipientMatch } from '../components/RecipientSearch';
 
 const KIND_LABEL: Record<string, string> = {
   grant: 'Grant',
@@ -43,8 +44,8 @@ export default function WalletPage() {
   const { user, refresh } = useAuth();
   const toast = useToast();
   const [data, setData] = useState<{ wallet: Wallet; transactions: Transaction[] } | null>(null);
-  const [transfer, setTransfer] = useState({ username: '', amount: 1 });
-  const [official, setOfficial] = useState({ username: '', amount: 100, memo: '' });
+  const [transfer, setTransfer] = useState({ recipient: null as RecipientMatch | null, amount: 1 });
+  const [official, setOfficial] = useState({ recipient: null as RecipientMatch | null, amount: 100, memo: '' });
   const [busy, setBusy] = useState(false);
   const load = () => get<{ wallet: Wallet; transactions: Transaction[] }>('/wallet').then(setData);
 
@@ -53,11 +54,12 @@ export default function WalletPage() {
   const sendTransfer = async (officialTransfer = false) => {
     setBusy(true);
     try {
-      const payload = officialTransfer ? official : transfer;
+      const source = officialTransfer ? official : transfer;
+      const payload = { recipientId: source.recipient?.id, amount: source.amount, ...('memo' in source ? { memo: source.memo } : {}) };
       await post(officialTransfer ? '/wallet/official-transfer' : '/wallet/transfer', payload);
       toast.push(officialTransfer ? 'Official transfer sent.' : 'Transfer sent.', 'good');
-      if (officialTransfer) setOfficial({ username: '', amount: 100, memo: '' });
-      else setTransfer({ username: '', amount: 1 });
+      if (officialTransfer) setOfficial({ recipient: null, amount: 100, memo: '' });
+      else setTransfer({ recipient: null, amount: 1 });
       await load();
       await refresh();
     } catch (err) {
@@ -92,17 +94,17 @@ export default function WalletPage() {
     <div className="grid grid--2">
       <section className="card card--pad stack">
         <div><div className="eyebrow">PERSON-TO-PERSON</div><h2>Send Tomato Coin</h2></div>
-        <label className="field"><span>Recipient username</span><input className="input" value={transfer.username} onChange={(event) => setTransfer({ ...transfer, username: event.target.value })} placeholder="discord_username" /></label>
+        <label className="field"><span>Recipient</span><RecipientSearch value={transfer.recipient} onChange={(recipient) => setTransfer({ ...transfer, recipient })} /></label>
         <label className="field"><span>Amount</span><input className="input" type="number" min={1} max={100000} value={transfer.amount} onChange={(event) => setTransfer({ ...transfer, amount: Number(event.target.value) })} /></label>
-        <button className="btn btn--primary" disabled={busy || !transfer.username || transfer.amount < 1} onClick={() => sendTransfer(false)}>Send {tmt(transfer.amount)}</button>
+        <button className="btn btn--primary" disabled={busy || !transfer.recipient || transfer.amount < 1} onClick={() => sendTransfer(false)}>Send {tmt(transfer.amount)}</button>
       </section>
 
       {['admin', 'read_only_admin'].includes(user?.siteRole || '') && <section className="card card--pad stack">
         <div><div className="eyebrow">OFFICIAL TRANSFER</div><h2>Issue Newsroom Funds</h2></div>
-        <label className="field"><span>Recipient username</span><input className="input" value={official.username} onChange={(event) => setOfficial({ ...official, username: event.target.value })} /></label>
+        <label className="field"><span>Recipient</span><RecipientSearch value={official.recipient} onChange={(recipient) => setOfficial({ ...official, recipient })} /></label>
         <label className="field"><span>Amount</span><input className="input" type="number" min={1} max={1000000} value={official.amount} onChange={(event) => setOfficial({ ...official, amount: Number(event.target.value) })} /></label>
         <label className="field"><span>Official memo</span><input className="input" value={official.memo} onChange={(event) => setOfficial({ ...official, memo: event.target.value })} placeholder="Newsroom allocation" /></label>
-        <button className="btn btn--tomato" disabled={busy || !official.username || official.amount < 1} onClick={() => sendTransfer(true)}>Issue {tmt(official.amount)}</button>
+        <button className="btn btn--tomato" disabled={busy || !official.recipient || official.amount < 1} onClick={() => sendTransfer(true)}>Issue {tmt(official.amount)}</button>
       </section>}
     </div>
 
