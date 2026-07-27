@@ -41,7 +41,7 @@ export default function ProfilePage() {
         <label className="field" style={{ flex: 1 }}><span>MC ID</span><input className="input" value={minecraftId} onChange={(event) => setMinecraftId(event.target.value)} placeholder="Minecraft username" maxLength={16} /></label>
         <button className="btn btn--primary" disabled={busy} onClick={save}>{busy ? 'Verifying…' : 'Verify and save'}</button>
       </div>
-      {user.minecraftUuid && <div className="row"><img className="mc-avatar" src={`https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay`} alt="" /><a href={`https://namemc.com/profile/${user.minecraftUuid}`} target="_blank" rel="noreferrer">View {user.minecraftId} on NameMC ↗</a></div>}
+      {user.minecraftUuid && <div className="row"><img className="mc-avatar" src={`https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay`} alt={`${user.minecraftId || 'Minecraft'} avatar`} /><div><strong>{user.minecraftId}</strong><div className="muted">Verified through Mojang</div></div></div>}
     </section>
     <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Newsroom identities.</div></div><Link className="btn" to="/masks">Manage masks</Link></section>
   </div>;

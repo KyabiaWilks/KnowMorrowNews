@@ -10,7 +10,6 @@ export type RecipientMatch = {
   avatar: string | null;
   matchedBy: string;
   mask: { alias: string; sigil: string } | null;
-  nameMcUrl: string | null;
 };
 
 export function RecipientSearch({ value, onChange }: { value: RecipientMatch | null; onChange: (recipient: RecipientMatch | null) => void }) {

@@ -32,7 +32,6 @@ walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
         avatar: user.discordAvatar || (user.minecraftUuid ? `https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay` : null),
         matchedBy: matchedMask ? `Mask · ${matchedMask.alias}` : matchedField[0],
         mask: matchedMask ? { alias: matchedMask.alias, sigil: matchedMask.sigil } : null,
-        nameMcUrl: user.minecraftUuid ? `https://namemc.com/profile/${user.minecraftUuid}` : null,
       };
     })
     .filter(Boolean)
