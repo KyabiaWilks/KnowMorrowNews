@@ -54,7 +54,7 @@ export function Layout() {
             <Link to="/tavern/rules">Submission rules</Link>
             <Link to="/tavern/disclosures">Disclosures</Link>
             <a href="https://discord.gg/u7ujs2wbXV" target="_blank" rel="noreferrer">Discord</a>
-            <span className="footer__friends">Friends of the Paper:</span>
+            <span className="footer__friends">Friend Links:</span>
             <a href="https://theciveventportal.online/" target="_blank" rel="noopener noreferrer">The Civ Event Portal ↗</a>
             <a href="https://lordeaux.app/" target="_blank" rel="noopener noreferrer">Lordeaux ↗</a>
             <span>© {new Date().getFullYear()}</span>

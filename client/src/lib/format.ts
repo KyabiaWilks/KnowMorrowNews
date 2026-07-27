@@ -23,7 +23,7 @@ export function fromNow(iso?: string | null) {
   return fmtDate(iso);
 }
 
-export const tmt = (n: number) => `${n.toLocaleString('zh-CN')} TMT`;
+export const tmt = (n: number) => `${n.toLocaleString('en-US')} TMT`;
 
 export function fmtSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

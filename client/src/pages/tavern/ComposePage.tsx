@@ -86,6 +86,10 @@ export default function ComposePage() {
   };
 
   const submitRequest = async () => {
+    if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
+      toast.push('Enter the deadline as YYYY-MM-DD.', 'bad');
+      return;
+    }
     setBusy(true);
     try {
       const res = await post<{ request: { id: string } }>('/tavern/requests', {
@@ -182,7 +186,18 @@ export default function ComposePage() {
             </div>
             <div className="field" style={{ maxWidth: 240 }}>
               <label>Deadline (optional)</label>
-              <input className="input" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+              <input
+                className="input"
+                type="text"
+                inputMode="numeric"
+                lang="en"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                placeholder="YYYY-MM-DD"
+                pattern="\d{4}-\d{2}-\d{2}"
+                aria-describedby="deadline-format"
+              />
+              <span id="deadline-format" className="muted" style={{ fontSize: 12 }}>Use YYYY-MM-DD.</span>
             </div>
           </>
         )}

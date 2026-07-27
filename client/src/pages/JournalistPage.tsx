@@ -12,18 +12,49 @@ export default function JournalistPage() {
   const { id } = useParams();
   const [data, setData] = useState<{ journalist: Detail; stories: Story[] } | null>(null);
   const [error, setError] = useState('');
-  useEffect(() => { setData(null); void get<{ journalist: Detail; stories: Story[] }>(`/journalists/${id}`).then(setData).catch((reason) => setError(reason.message)); }, [id]);
+  const [portraitFlipped, setPortraitFlipped] = useState(false);
+
+  useEffect(() => {
+    setData(null);
+    setError('');
+    setPortraitFlipped(false);
+    void get<{ journalist: Detail; stories: Story[] }>(`/journalists/${id}`).then(setData).catch((reason) => setError(reason.message));
+  }, [id]);
+
   if (error) return <div className="empty">{error}</div>;
   if (!data) return <Spinner />;
+
   const contributor = data.journalist;
   const awards: Award[] = Array.isArray(contributor.awards) ? contributor.awards : [];
+  const joinedYear = new Date(contributor.joinedAt).getFullYear();
+
   return <div className="stack" style={{ gap: 26 }}>
-    <div className="card card--pad" style={{ display: 'flex', gap: 24, alignItems: 'center', background: `linear-gradient(120deg, ${contributor.portraitTone}14, #fff 55%)` }}>
-      <div className="jnl-portrait jnl-portrait--lg" style={{ background: `linear-gradient(135deg, ${contributor.portraitTone}, #0b2545)` }}>{contributor.name.slice(0, 1)}</div>
-      <div className="stack" style={{ gap: 8, flex: 1 }}><div><h1 style={{ fontSize: 30 }}>{contributor.name}</h1><div className="soft" style={{ fontWeight: 650 }}>{contributor.title}</div></div><div style={{ fontStyle: 'italic', color: 'var(--ink-soft)' }}>“{contributor.tagline}”</div><div className="row" style={{ gap: 6 }}>{contributor.beats.map((value) => <span key={value} className="chip">{value}</span>)}</div><div className="row muted" style={{ gap: 16 }}><span>Joined {fmtDate(contributor.joinedAt)}</span>{contributor.contact && <span>✉ {contributor.contact}</span>}</div></div>
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 96px)', gap: 10 }}><div className="card stat"><div className="stat__value">{contributor.stats.stories}</div><div className="stat__label">Stories</div></div><div className="card stat"><div className="stat__value">{contributor.stats.awards}</div><div className="stat__label">Awards</div></div><div className="card stat"><div className="stat__value">{(contributor.stats.totalViews / 1000).toFixed(1)}k</div><div className="stat__label">Views</div></div></div>
+    <div className="card card--pad journalist-hero" style={{ background: `linear-gradient(120deg, ${contributor.portraitTone}14, #fff 55%)` }}>
+      <button type="button" className={`portrait-flip${portraitFlipped ? ' portrait-flip--turned' : ''}`} onClick={() => setPortraitFlipped((value) => !value)} aria-label={`${portraitFlipped ? 'Show portrait' : 'Show reporter card'} for ${contributor.name}`} aria-pressed={portraitFlipped}>
+        <span className="portrait-flip__inner">
+          <span className="portrait-flip__face portrait-flip__front" style={{ background: `linear-gradient(145deg, ${contributor.portraitTone}, #071a35)` }}>
+            <span className="portrait-flip__initial">{contributor.name.slice(0, 1)}</span>
+            <span className="portrait-flip__hint">FLIP</span>
+          </span>
+          <span className="portrait-flip__face portrait-flip__back">
+            <span className="portrait-flip__kicker">PRESS PASS</span>
+            <strong>{contributor.name}</strong>
+            <span>{contributor.beats.slice(0, 2).join(' · ')}</span>
+            <span className="portrait-flip__year">EST. {joinedYear}</span>
+          </span>
+        </span>
+      </button>
+
+      <div className="stack journalist-hero__copy">
+        <div><h1 style={{ fontSize: 30 }}>{contributor.name}</h1><div className="soft" style={{ fontWeight: 650 }}>{contributor.title}</div></div>
+        <div style={{ fontStyle: 'italic', color: 'var(--ink-soft)' }}>“{contributor.tagline}”</div>
+        <div className="row" style={{ gap: 6 }}>{contributor.beats.map((value) => <span key={value} className="chip">{value}</span>)}</div>
+        <div className="row muted" style={{ gap: 16 }}><span>Joined {fmtDate(contributor.joinedAt)}</span>{contributor.contact && <span>✉ {contributor.contact}</span>}</div>
+      </div>
+      <div className="grid journalist-hero__stats"><div className="card stat"><div className="stat__value">{contributor.stats.stories}</div><div className="stat__label">Stories</div></div><div className="card stat"><div className="stat__value">{contributor.stats.awards}</div><div className="stat__label">Awards</div></div><div className="card stat"><div className="stat__value">{(contributor.stats.totalViews / 1000).toFixed(1)}k</div><div className="stat__label">Views</div></div></div>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 24, alignItems: 'start' }}>
+
+    <div className="journalist-layout">
       <div className="stack" style={{ gap: 20 }}>
         <section className="card card--pad"><div className="eyebrow">ABOUT</div><p style={{ marginTop: 10, marginBottom: 0 }}>{contributor.bio}</p></section>
         {contributor.signatureWorks.length > 0 && <section className="card card--pad stack"><div className="eyebrow">SIGNATURE WORK</div>{contributor.signatureWorks.map((work, index) => <div key={index} className="card card--pad" style={{ background: 'var(--blue-50)', borderColor: 'var(--blue-100)' }}>{work.article ? <Link to={`/news/${work.article.id}`} style={{ fontWeight: 720 }}>{work.article.title} →</Link> : <span style={{ fontWeight: 720 }}>This story is no longer available</span>}<div className="muted" style={{ marginTop: 5 }}>{work.note}</div></div>)}</section>}
