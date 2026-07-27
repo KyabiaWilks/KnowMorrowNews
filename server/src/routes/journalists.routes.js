@@ -58,7 +58,7 @@ journalistsRouter.get(
   '/:id',
   wrap((req, res) => {
     let j = db.journalists.find((x) => x.id === req.params.id);
-    if (!j || j.hidden) throw missing('没有这位记者');
+    if (!j || j.hidden) throw missing('Reporter not found.');
     j = englishJournalist(j);
     const stories = db.news
       .filter((a) => a.status === 'published' && (a.authorIds || []).includes(j.id))
