@@ -29,8 +29,8 @@
   --warn: #f0a92b;
   --bad: #d94a3d;
 
-  --radius: 14px;
-  --radius-sm: 9px;
+  --radius: 6px;
+  --radius-sm: 4px;
   --shadow-sm: 0 1px 2px rgba(10, 28, 51, 0.06), 0 2px 8px rgba(10, 28, 51, 0.05);
   --shadow-md: 0 8px 30px rgba(10, 28, 51, 0.1);
   --shadow-lg: 0 24px 70px rgba(6, 20, 40, 0.18);
@@ -2342,6 +2342,10 @@ body { background: var(--paper-dim); }
   }
 }
 
+.article-card__cover {
+  border-radius: var(--radius) var(--radius) 0 0 !important;
+}
+
 /* ------------------------ Tablet and mobile navigation ------------------------ */
 
 @media (max-width: 1024px) {
@@ -2846,4 +2850,13 @@ main.page.page--tavern > .tavern {
 
 .footer__text-button:hover {
   color: var(--blue-500);
+}
+
+/* Final radius normalization for components declared after the responsive blocks above. */
+:where(.card, .modal, .hero, .btn, .chip, .coin-pill, .nav a, .admin-nav a, .admin-language, .admin-language button, .input, .select, .textarea, .recipient-results, .recipient-selected, .tier, .tomato-fab, .tomato-hud, .tomato__note, .notice-banner, .toast, .cookie-consent, .cookie-preferences, .journalist-flip, .journalist-flip__face, .km-login__discord) {
+  border-radius: var(--radius) !important;
+}
+
+:where(.chip, .coin-pill, .nav a, .btn, .btn--sm, .admin-nav a, .admin-language button) {
+  border-radius: var(--radius-sm) !important;
 }
