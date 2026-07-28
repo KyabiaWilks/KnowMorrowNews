@@ -1320,6 +1320,13 @@ button.chip:hover {
   color: #e6a85f;
 }
 
+.tavern-slogan {
+  margin: 4px 0 8px;
+  color: #f0b96f;
+  font: italic 700 15px/1.2 var(--serif);
+  letter-spacing: .04em;
+}
+
 .tavern .modal {
   background: linear-gradient(155deg, #3b2318, #21130d);
   border: 1px solid #80502f;

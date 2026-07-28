@@ -21,7 +21,7 @@ export default function HomePage() {
           <p>Tomorrow may always be a day away, but the details are already knocking. We publish the grand scandal, the quiet disappearance, the unlikely romance—and the unfortunate punch thrown at a leader.</p>
           <div className="row"><Link to="/tavern/compose" className="btn btn--primary">Tell us everything</Link><a className="btn km-btn-light" href="https://discord.gg/u7ujs2wbXV" target="_blank" rel="noreferrer">Join the Discord</a></div>
         </div>
-        <div className="km-hero__art"><img src="/know-morrow-mark.webp" alt="A rising white moon beneath an arc of light" /><span>TOMORROW’S NEWS, TODAY’S PROBLEM</span></div>
+        <div className="km-hero__art"><img src="/know-morrow-mark.webp" alt="A rising white moon beneath an arc of light" /><span>KETCHUP ON THE LATEST SCOOP!</span></div>
       </section>
       <section className="km-manifesto">
         <div className="km-section-number">01</div>
