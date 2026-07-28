@@ -1435,8 +1435,6 @@ button.chip:hover {
   margin-top: 2px;
 }
 
-/* --------------------------------- Ghost --------------------------------- */
-
 .ghost {
   min-height: 100vh;
   background: #04070c;

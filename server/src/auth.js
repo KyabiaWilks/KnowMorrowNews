@@ -73,7 +73,7 @@ const ghostSessions = new Map();
 const GHOST_TTL = 45 * 60 * 1000;
 
 export function openGhostSession(key) {
-  if (String(key) !== config.ghostKey) return null;
+  if (!config.ghostKey || String(key) !== config.ghostKey) return null;
   const sessionKey = crypto.randomBytes(24).toString('base64url');
   ghostSessions.set(sessionKey, Date.now() + GHOST_TTL);
   return { sessionKey, expiresAt: Date.now() + GHOST_TTL };

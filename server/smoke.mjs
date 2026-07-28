@@ -184,10 +184,10 @@ check('被封禁账号无法登录', (await call('/auth/login', { method: 'POST'
 check('涉事情报已下架', (await call('/tavern/offers/ofr_fake')).status === 404);
 check('公开处罚公告已发布', (await call('/tavern/disclosures')).data.items.length === 1);
 
-console.log('\n— Ghost 无痕通道 —');
+console.log('\n— Restricted route checks —');
 check('错误口令伪装成 404', (await call('/ghost/session', { method: 'POST', body: { key: 'wrong' } })).status === 404);
 check('无会话访问伪装成 404', (await call('/ghost/identities')).status === 404);
-const ghost = await call('/ghost/session', { method: 'POST', body: { key: 'moon-sees-everything' } });
+const ghost = await call('/ghost/session', { method: 'POST', body: { key: process.env.GHOST_KEY } });
 check('正确口令换到会话', ghost.status === 200 && !!ghost.data.sessionKey);
 const gk = ghost.data.sessionKey;
 
@@ -206,13 +206,13 @@ check('全站检索命中付费正文', gSearch.data.groups.some((g) => g.kind =
 const viewsBefore = pipeline.views;
 await call('/ghost/offers', { ghost: gk });
 const viewsAfter = (await call('/ghost/offers', { ghost: gk })).data.items.find((o) => o.id === 'ofr_pipeline').views;
-check('ghost 浏览不增加计数', viewsBefore === viewsAfter);
+check('restricted browsing does not increase counts', viewsBefore === viewsAfter);
 
 const auditBefore = (await call('/admin/overview', { token: admin.token })).data.recentAudit.length;
 await call('/ghost/ledger', { ghost: gk });
 await call('/ghost/reports', { ghost: gk });
 const auditAfter = (await call('/admin/overview', { token: admin.token })).data.recentAudit.length;
-check('ghost 操作不写审计日志', auditBefore === auditAfter);
+check('restricted reads do not create audit entries', auditBefore === auditAfter);
 
 console.log(`\n通过 ${pass} 项，失败 ${fail} 项\n`);
 process.exit(fail ? 1 : 0);

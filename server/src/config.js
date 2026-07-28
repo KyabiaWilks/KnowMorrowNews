@@ -18,7 +18,7 @@ export const config = {
   port: Number(process.env.PORT || 4000),
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   authSecret: process.env.AUTH_SECRET || 'jontop-dev-secret',
-  ghostKey: process.env.GHOST_KEY || 'moon-sees-everything',
+  ghostKey: process.env.GHOST_KEY || '',
   tomatoPrice: Number(process.env.TOMATO_PRICE || 1),
   databaseUrl: process.env.DATABASE_URL || '',
   dataDir: path.join(ROOT, 'data'),

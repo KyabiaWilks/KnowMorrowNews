@@ -163,7 +163,7 @@ const REQUEST_EN = {
 /**
  * @param {object} offer
  * @param {object|null} viewer  当前登录用户
- * @param {boolean} reveal      true = 无视付费墙（仅 ghost / 作者本人 / 管理员仲裁）
+ * @param {boolean} reveal      true = bypass the paywall for an authorized view
  */
 export function publicOffer(offer, viewer, reveal = false) {
   reveal = reveal || ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(viewer?.siteRole);
@@ -239,7 +239,7 @@ export function evidenceById(id) {
 }
 
 /* --------------------------------- 审计 --------------------------------- */
-/** 只有管理员操作会留痕；ghost 通道永远不会调用它。 */
+/** Records audited administrative actions. */
 export function audit(actor, action, detail) {
   db.auditLog.unshift({
     id: uid('log'),

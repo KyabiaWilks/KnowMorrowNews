@@ -84,9 +84,6 @@ export default function AdminOverview() {
             )}
           </tbody>
         </table>
-        <div className="hint" style={{ marginTop: 10 }}>
-          注意：hacker 通道（/ghost）的查看行为<strong>不会</strong>出现在这里，这是设计使然。
-        </div>
       </div>
     </div>
   );

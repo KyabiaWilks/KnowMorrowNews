@@ -54,7 +54,6 @@ app.use((err, _req, res, _next) => {
 const server = app.listen(config.port, () => {
   console.log(`\n  🌙 JONTOP server  →  http://localhost:${config.port}`);
   console.log(`  🍅 一颗番茄 = ${config.tomatoPrice} TMT`);
-  console.log(`  👁  ghost 口令 = ${config.ghostKey}  （前端 /ghost 页面输入）\n`);
 });
 
 async function shutdown(signal) {

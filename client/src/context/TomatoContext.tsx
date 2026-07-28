@@ -24,7 +24,6 @@ type Ctx = {
 const TomatoCtx = createContext<Ctx>(null as unknown as Ctx);
 export const useTomato = () => useContext(TomatoCtx);
 
-/** hacker 页面不参与番茄玩法 */
 const isExcluded = (path: string) => path.startsWith('/ghost');
 
 export function TomatoProvider({ children }: { children: ReactNode }) {

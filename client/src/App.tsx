@@ -36,7 +36,6 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
-        {/* hacker 视图独立于站点外壳，不带顶栏、不参与番茄 */}
         <Route path="/ghost/*" element={<GhostPage />} />
 
         <Route element={<Layout />}>

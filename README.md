@@ -37,7 +37,6 @@ npm run reset          # 覆盖写入种子内容
 |------|------|------|
 | 读者 / 交易者 | `/` | 新闻、记者、酒馆、番茄弹幕、钱包 |
 | 管理员 | `/admin`（需 admin 账号） | 刊发、记者、用户、标签、番茄治理、举报仲裁 |
-| Ghost（hacker） | `/ghost` | 无痕查看任意数据，含酒馆匿名身份与付费正文 |
 
 ### 演示账号
 
@@ -49,21 +48,6 @@ npm run reset          # 覆盖写入种子内容
 | `lyra` | `lyra123456` | 记者向用户（种子里有一条待仲裁情报） |
 | `reader` | `reader123456` | 普通读者 |
 
-### Ghost 口令
-
-前端 `/ghost` 输入：
-
-```
-moon-sees-everything
-```
-
-可在 `server/.env` 中用 `GHOST_KEY` 修改（参考 `server/.env.example`）。
-
-约定：
-
-- 会话放在 `sessionStorage`，关标签即失效
-- 错误口令 / 无会话一律返回 **404**（伪装成不存在）
-- **不写审计日志、不增加浏览数、不通知任何人**
 - 可摘下面具、读付费正文、看买家真身、全站检索（含正文）
 
 ---
@@ -101,12 +85,12 @@ moon-sees-everything
 jontop/
 ├── client/                 # Vite + React
 │   └── src/
-│       ├── pages/          # 用户 / 酒馆 / 管理台 / ghost
+│       ├── pages/          # 用户 / 酒馆 / 管理台
 │       ├── components/     # 月眼 Logo、番茄层、布局
 │       └── context/        # 登录、番茄弹幕、Toast
 ├── server/
 │   ├── src/
-│   │   ├── routes/         # auth / news / tavern / admin / ghost …
+│   │   ├── routes/         # auth / news / tavern / admin …
 │   │   ├── seed.js         # 演示数据
 │   │   └── index.js
 │   ├── data/db.json        # 运行时数据（gitignore）
@@ -125,5 +109,4 @@ jontop/
 | `PORT` | `4000` | API 端口 |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | CORS |
 | `AUTH_SECRET` | 开发默认值 | 登录令牌密钥 |
-| `GHOST_KEY` | `moon-sees-everything` | Ghost 入口令 |
 | `TOMATO_PRICE` | `1` | 扔一颗番茄的 TMT 价格 |

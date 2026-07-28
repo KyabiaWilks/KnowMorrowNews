@@ -7,7 +7,6 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-/** ghost 会话只放在 sessionStorage：关掉标签页就消失，不留痕迹 */
 export const ghostStore = {
   get: () => sessionStorage.getItem(GHOST_KEY),
   set: (t: string) => sessionStorage.setItem(GHOST_KEY, t),
