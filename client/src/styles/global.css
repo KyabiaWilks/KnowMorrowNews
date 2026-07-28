@@ -1222,19 +1222,20 @@ button.chip:hover {
 /* -------------------------------- 酒馆 -------------------------------- */
 
 .tavern {
-  --tv-bg: #b8a594;
+  --tv-bg: #c7a57d;
   position: relative;
   isolation: isolate;
   min-height: calc(100vh - var(--header-h));
   background:
-    linear-gradient(180deg, rgba(241, 218, 166, .2), transparent 240px),
-    linear-gradient(145deg, #c8b8a8 0%, #b8a594 55%, #aa9685 100%);
-  color: #44362f;
+    linear-gradient(180deg, rgba(255, 221, 137, .34), transparent 280px),
+    linear-gradient(145deg, #dfc39b 0%, #cdaa7e 54%, #bc956d 100%);
+  color: #4b3022;
   border: 0;
   border-radius: 0;
   padding: 34px max(20px, calc((100vw - 1480px) / 2)) 84px;
   box-shadow: none;
   overflow: hidden;
+  font-family: 'Trebuchet MS', var(--font);
 }
 
 .tavern::before {
@@ -1247,7 +1248,7 @@ button.chip:hover {
   height: 310px;
   transform: translateX(-50%) scale(.94);
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(255, 211, 103, .62) 0%, rgba(245, 191, 81, .28) 36%, transparent 72%);
+  background: radial-gradient(ellipse, rgba(255, 221, 112, .8) 0%, rgba(248, 177, 58, .38) 38%, transparent 72%);
   filter: blur(24px);
   animation: tavern-warm-breathe 5.5s ease-in-out infinite;
   pointer-events: none;
@@ -1263,98 +1264,100 @@ button.chip:hover {
 .tavern h1,
 .tavern h2,
 .tavern h3 {
-  color: #382a24;
+  color: #4a2918;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: -.015em;
 }
 
 .tavern .card {
-  background: rgba(245, 238, 228, .66);
-  border-color: rgba(100, 73, 58, .2);
-  color: #44362f;
-  box-shadow: 0 8px 24px rgba(70, 49, 38, .07);
+  background: rgba(255, 241, 215, .72);
+  border-color: rgba(119, 70, 39, .24);
+  color: #4b3022;
+  box-shadow: 0 8px 24px rgba(91, 51, 26, .09);
 }
 
 .tavern .card--hover:hover {
-  border-color: rgba(139, 95, 65, .4);
-  background: rgba(250, 244, 235, .82);
+  border-color: rgba(151, 83, 40, .48);
+  background: rgba(255, 246, 225, .9);
 }
 
 .tavern .muted {
-  color: #756359;
+  color: #795d4b;
 }
 
 .tavern .soft {
-  color: #594940;
+  color: #60402f;
 }
 
 .tavern a:not(.btn) {
-  color: #744b34;
+  color: #7c3f22;
 }
 
 .tavern a:not(.btn):hover {
-  color: #4d3021;
+  color: #552713;
 }
 
 .tavern .input,
 .tavern .textarea,
 .tavern .select {
-  background: rgba(255, 251, 244, .62);
-  border-color: rgba(104, 76, 60, .26);
-  color: #3f312a;
+  background: rgba(255, 247, 229, .72);
+  border-color: rgba(119, 70, 39, .28);
+  color: #4b3022;
 }
 
 .tavern .input::placeholder,
 .tavern .textarea::placeholder {
-  color: #8d776a;
+  color: #99745d;
 }
 
 .tavern .btn {
-  background: rgba(248, 241, 231, .7);
-  border-color: rgba(104, 76, 60, .28);
-  color: #4c382e;
+  background: rgba(255, 239, 211, .74);
+  border-color: rgba(119, 70, 39, .3);
+  color: #573522;
 }
 
 .tavern .btn--primary {
-  background: #94694f;
-  border-color: #815a44;
-  color: #fffaf2;
+  background: #a85c2e;
+  border-color: #8e4823;
+  color: #fff6e5;
 }
 
 .tavern .chip {
-  background: rgba(244, 234, 221, .62);
-  border-color: rgba(111, 80, 62, .25);
-  color: #5e4639;
+  background: rgba(255, 235, 202, .68);
+  border-color: rgba(119, 70, 39, .27);
+  color: #67402a;
 }
 
 .tavern .chip--on {
-  background: #8d654f;
-  border-color: #7c5744;
-  color: #fffaf2;
+  background: #9b552f;
+  border-color: #844522;
+  color: #fff5df;
 }
 
 .tavern .table th {
-  color: #745f53;
-  border-color: rgba(99, 73, 59, .2);
+  color: #76513c;
+  border-color: rgba(119, 70, 39, .22);
 }
 
 .tavern .table td {
-  border-color: rgba(99, 73, 59, .13);
+  border-color: rgba(119, 70, 39, .15);
 }
 
 .tavern .table tr:hover td {
-  background: rgba(255, 249, 239, .38);
+  background: rgba(255, 239, 210, .42);
 }
 
 .tavern .page-sub {
-  color: #6c584d !important;
+  color: #73523f !important;
 }
 
 .tavern .eyebrow {
-  color: #78533e;
+  color: #8d4825;
 }
 
 .tavern-slogan {
   margin: 4px 0 8px;
-  color: #82583e;
+  color: #934b23;
   font: italic 700 15px/1.2 var(--serif);
   letter-spacing: .04em;
 }
@@ -2253,4 +2256,19 @@ body { background: var(--paper-dim); }
     transition: none;
     animation: none;
   }
+}
+
+/* Keep Tavern full-bleed after the newspaper theme's generic page rules. */
+main.page.page--tavern {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+main.page.page--tavern > .tavern {
+  width: 100%;
+  min-height: calc(100vh - var(--header-h));
+  margin: 0;
+  box-sizing: border-box;
 }
