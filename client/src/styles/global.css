@@ -988,10 +988,23 @@ button.chip:hover {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(219, 231, 255, 0.25);
   border-radius: 7px;
-  padding: 6px 9px;
+  padding: 6px 46px 6px 9px;
   color: #fff;
   outline: none;
   font-size: 12.5px;
+}
+
+.tomato-hud__message {
+  position: relative;
+}
+
+.tomato-hud__message span {
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  color: rgba(219, 231, 255, .68);
+  font: 10px/1 var(--mono);
+  pointer-events: none;
 }
 
 /* -------------------------------- 新闻 -------------------------------- */

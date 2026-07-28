@@ -102,10 +102,10 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
   }
   const siteRole = String(profile.username || '').toLowerCase() === config.supremeDiscordUsername.toLowerCase()
     ? 'admin'
-    : roleNames.includes('event staff')
-        ? 'read_only_admin'
-        : roleNames.includes('administrator') || roleNames.includes('admin')
-          ? 'admin'
+    : roleNames.some((role) => ['administrator', 'admin', 'admin tomato', 'head editor'].includes(role))
+        ? 'admin'
+        : roleNames.includes('event staff')
+          ? 'read_only_admin'
         : roleNames.includes('tomato')
           ? 'journalist'
           : 'user';

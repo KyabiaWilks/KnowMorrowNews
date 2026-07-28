@@ -2,7 +2,7 @@ export default function TermsPage() {
   return (
     <article className="legal-page">
       <header className="legal-page__head"><div className="eyebrow">LEGAL</div><h1 className="page-title">Terms of Service</h1><p>Effective July 28, 2026 · Last updated July 28, 2026</p></header>
-      <p>These Terms of Service (“Terms”) govern access to Know Morrow News, including the News section, Tavern, masks, Tomato Credits, messaging, submissions and related services (collectively, the “Service”). The Service is operated by Kyabia (“Kyabia,” “we,” “us,” or “our”). Questions may be sent to <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
+      <p>These Terms of Service (“Terms”) govern access to Know Morrow News, including the News section, Tavern, masks, Tomato Credits, messaging, submissions and related services (collectively, the “Service”). Know Morrow News is operated by a private individual using the pseudonym “Kyabia” (“Kyabia,” “we,” “us,” or “our”). Questions may be sent to <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
       <h2>1. Acceptance and eligibility</h2>
       <p>By accessing or using the Service, you agree to these Terms and our Privacy Policy. You must be at least 13 years old. If you are under the age of legal majority where you live, you represent that a parent or legal guardian has permitted your use. The Tavern may contain mature themes, disputes and anonymous transactions; users under 18 should use it only with appropriate supervision.</p>
       <h2>2. Accounts and Discord</h2>
@@ -33,8 +33,10 @@ export default function TermsPage() {
       <p>You agree to defend and indemnify Kyabia from claims, liabilities and reasonable costs arising from your content, your transactions, your violation of these Terms or your infringement of another person’s rights, to the extent permitted by law.</p>
       <h2>15. Governing law and venue</h2>
       <p>These Terms are governed by the laws of the State of Ohio, without regard to conflict-of-law principles. Any dispute arising from these Terms or the Service must be brought exclusively in the state or federal courts located in Franklin County, Ohio, United States, and you consent to their personal jurisdiction. Nothing in this section removes non-waivable consumer rights that apply where you live.</p>
-      <h2>16. Changes and contact</h2>
-      <p>We may update these Terms. Material changes may require renewed acceptance or be announced through the Service. Continued use after an effective update constitutes acceptance where permitted by law. If a provision is unenforceable, the remainder stays effective. These Terms and incorporated policies are the entire agreement concerning the Service. Contact: <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
+      <h2>16. Severability</h2>
+      <p>If any provision of these Terms is or becomes invalid, illegal or unenforceable, the rest stays in force. The affected provision will be enforced to the greatest extent permitted by applicable law.</p>
+      <h2>17. Changes and contact</h2>
+      <p>We may update these Terms. Material changes may require renewed acceptance or be announced through the Service. Continued use after an effective update constitutes acceptance where permitted by law. These Terms and incorporated policies are the entire agreement concerning the Service. Contact: <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
     </article>
   );
 }

@@ -2,7 +2,7 @@ export default function PrivacyPage() {
   return (
     <article className="legal-page">
       <header className="legal-page__head"><div className="eyebrow">LEGAL</div><h1 className="page-title">Privacy Policy</h1><p>Effective July 28, 2026 · Last updated July 28, 2026</p></header>
-      <p>This Privacy Policy explains how Kyabia, operator of Know Morrow News (“we,” “us,” or “our”), collects, uses, shares and retains information when you use the Service. Privacy questions and requests may be sent to <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
+      <p>Know Morrow News is operated by a private individual using the pseudonym “Kyabia” (“we,” “us,” or “our”). This Privacy Policy explains how the operator collects, uses, shares and retains information when you use the Service. Privacy questions and requests may be sent to <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
       <h2>1. Information we collect</h2>
       <h3>Discord account information</h3><p>When you sign in with Discord, we may receive your Discord user ID, username, display name, avatar, server membership and relevant server roles. We use this information to create your account, authenticate you, assign permissions and operate Discord notifications. We do not receive your Discord password.</p>
       <h3>Profile and linked-game information</h3><p>We collect profile changes you provide, including display name and Minecraft Java username. We use Mojang services to verify the username and store the returned Minecraft UUID. We may retrieve a rendered Minecraft avatar through a third-party image service and cache it through our server.</p>

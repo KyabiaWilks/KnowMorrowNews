@@ -26,7 +26,8 @@ tomatoRouter.post('/', requireAuth, wrap((req, res) => {
   const x = Number(req.body.x);
   const y = Number(req.body.y);
   if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 100 || y < 0 || y > 100) throw bad('The tomato landing point must be within the page.');
-  const note = String(req.body.note || '').trim().slice(0, 60);
+  const note = String(req.body.note || '').trim();
+  if (note.length > 60) throw bad('A tomato message cannot exceed 60 characters.');
   let alias = req.user.displayName || 'Anonymous reader';
   if (req.body.profileId) {
     const profile = profileById(req.body.profileId);
