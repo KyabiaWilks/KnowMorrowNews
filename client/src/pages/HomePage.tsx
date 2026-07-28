@@ -35,6 +35,22 @@ export default function HomePage() {
         <div><div className="km-kicker">HOW TO SUBMIT</div><h2>Tell our tomatoes to come ketchup on the latest scoop.</h2></div>
         <div><p>Photos, witness statements, epic reenactments and dramatic retellings are always appreciated. For confidential details, open a private ticket—our head editor will personally handle your submission with a full NDA.</p><div className="row"><Link to="/tavern/compose" className="btn btn--primary">Submit a story</Link><a href="https://discord.gg/u7ujs2wbXV" className="btn" target="_blank" rel="noreferrer">Open a private ticket</a></div></div>
       </section>
+      <section className="km-friends" aria-labelledby="friend-links-title">
+        <div>
+          <div className="km-kicker">FRIEND LINKS</div>
+          <h2 id="friend-links-title">Elsewhere tomorrow is being built.</h2>
+        </div>
+        <div className="km-friends__links">
+          <a href="https://theciveventportal.online/" target="_blank" rel="noopener noreferrer">
+            <span>The Civ Event Portal</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+          <a href="https://lordeaux.app/" target="_blank" rel="noopener noreferrer">
+            <span>Lordeaux</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
