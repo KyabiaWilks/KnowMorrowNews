@@ -154,6 +154,7 @@ export function Layout() {
             <Link to="/tavern/disclosures">Disclosures</Link>
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
+            <button type="button" className="footer__text-button" onClick={() => window.dispatchEvent(new Event('know-morrow:cookie-settings'))}>Cookie settings</button>
             <a href="https://discord.gg/u7ujs2wbXV" target="_blank" rel="noreferrer">Discord</a>
             <span>© {new Date().getFullYear()}</span>
           </div>

@@ -2061,6 +2061,33 @@ body { background: var(--paper-dim); }
   color: var(--blue-600);
   font-weight: 650;
 }
+
+.km-login__legal-consent {
+  margin: 0;
+  padding: 17px 28px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.km-login__legal-consent input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+  accent-color: var(--blue-600);
+}
+
+.km-login__legal-consent a {
+  color: var(--blue-600);
+  font-weight: 700;
+  text-decoration: underline;
+}
 @media (max-width: 900px) {
   .km-hero, .km-login, .km-submit, .km-friends { grid-template-columns: 1fr; }
   .km-hero__art { display: none; }
@@ -2669,6 +2696,44 @@ main.page.page--tavern > .tavern {
   gap: 10px;
 }
 
+.cookie-consent__copy {
+  min-width: 0;
+}
+
+.cookie-consent__options {
+  display: grid;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.cookie-consent__options label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+}
+
+.cookie-consent__options label > span {
+  display: grid;
+  gap: 2px;
+}
+
+.cookie-consent__options small {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.cookie-consent__options input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--blue-600);
+}
+
 .cookie-consent__links a {
   color: var(--blue-600);
   font-size: 12px;
@@ -2709,4 +2774,17 @@ main.page.page--tavern > .tavern {
   .cookie-consent__actions .btn {
     flex: 1;
   }
+}
+
+.footer__text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.footer__text-button:hover {
+  color: var(--blue-500);
 }
