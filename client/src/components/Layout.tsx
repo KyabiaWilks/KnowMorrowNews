@@ -3,6 +3,7 @@ import { NavLink, Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { TomatoLayer, TomatoToolbar } from './TomatoLayer';
 import { NotificationBell } from './NotificationBell';
+import { CookieConsent } from './CookieConsent';
 
 const NAV = [
   { to: '/', label: 'Front Page', end: true },
@@ -151,6 +152,8 @@ export function Layout() {
           <div className="row" style={{ gap: 16 }}>
             <Link to="/tavern/rules">Submission rules</Link>
             <Link to="/tavern/disclosures">Disclosures</Link>
+            <Link to="/terms">Terms</Link>
+            <Link to="/privacy">Privacy</Link>
             <a href="https://discord.gg/u7ujs2wbXV" target="_blank" rel="noreferrer">Discord</a>
             <span>© {new Date().getFullYear()}</span>
           </div>
@@ -158,6 +161,7 @@ export function Layout() {
       </footer>
       <TomatoLayer />
       <TomatoToolbar />
+      <CookieConsent />
     </div>
   );
 }

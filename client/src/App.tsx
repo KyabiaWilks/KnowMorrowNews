@@ -25,6 +25,8 @@ import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import DeskHubPage from './pages/DeskHubPage';
 import NewsDeskPage from './pages/NewsDeskPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function RequireAuth({ children, admin, editorial }: { children: JSX.Element; admin?: boolean; editorial?: boolean }) {
   const { user, loading } = useAuth();
@@ -87,6 +89,8 @@ export default function App() {
             }
           />
           <Route path="login" element={<LoginPage />} />
+          <Route path="terms" element={<TermsPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
           <Route path="notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
           <Route path="profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="desk" element={<RequireAuth><DeskHubPage /></RequireAuth>} />

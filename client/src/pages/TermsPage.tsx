@@ -1,0 +1,40 @@
+export default function TermsPage() {
+  return (
+    <article className="legal-page">
+      <header className="legal-page__head"><div className="eyebrow">LEGAL</div><h1 className="page-title">Terms of Service</h1><p>Effective July 28, 2026 · Last updated July 28, 2026</p></header>
+      <p>These Terms of Service (“Terms”) govern access to Know Morrow News, including the News section, Tavern, masks, Tomato Credits, messaging, submissions and related services (collectively, the “Service”). The Service is operated by Kyabia (“Kyabia,” “we,” “us,” or “our”). Questions may be sent to <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
+      <h2>1. Acceptance and eligibility</h2>
+      <p>By accessing or using the Service, you agree to these Terms and our Privacy Policy. You must be at least 13 years old. If you are under the age of legal majority where you live, you represent that a parent or legal guardian has permitted your use. The Tavern may contain mature themes, disputes and anonymous transactions; users under 18 should use it only with appropriate supervision.</p>
+      <h2>2. Accounts and Discord</h2>
+      <p>New accounts are created through Discord. You authorize us to receive the Discord profile and server membership information described in our Privacy Policy. You are responsible for your Discord account, credentials and activity performed through your Know Morrow account. Test or legacy credentials are provided only for authorized testing and may be removed at any time. Do not sell, transfer, share or impersonate another account.</p>
+      <h2>3. Roles and editorial access</h2>
+      <p>Permissions may depend on Discord roles and site roles, including reader, journalist, administrator and read-only administrator. Roles do not create employment, agency or ownership rights. We may correct or revoke permissions when server roles change, access was assigned in error, or security requires it.</p>
+      <h2>4. User content and news submissions</h2>
+      <p>You retain ownership of content you submit. You grant Kyabia a worldwide, non-exclusive, royalty-free license to host, store, reproduce, format, moderate, display and distribute that content as needed to operate and promote the Service. You represent that you have the necessary rights and that your content does not violate law, privacy, confidentiality, copyright or these Terms. We may edit headlines and formatting, add context, reject submissions, preserve evidence, or remove content. Publication does not mean we endorse or verify a submission.</p>
+      <h2>5. Masks and anonymity</h2>
+      <p>Masks hide an account identity from ordinary Tavern participants; they do not hide it from Kyabia or authorized arbitration staff. We may connect masks to an account to prevent abuse, investigate reports, enforce sanctions, comply with law or protect users. You must not use masks to evade restrictions, manipulate transactions, harass others or create a false impression of independent users.</p>
+      <h2>6. Tavern transactions and escrow</h2>
+      <p>Tavern offers and requests are arrangements between participating users. Buyers must review descriptions before unlocking information. Request deposits are reserved in site escrow until payment, closure or a platform decision. We may freeze, return, debit or reallocate Tomato Credits to correct errors, complete accepted requests, compensate harmed users or enforce an arbitration decision. We do not guarantee that information is accurate, valuable, lawful or exclusive.</p>
+      <h2>7. Tomato Credits</h2>
+      <p>Tomato Credits (“TMT”) are closed-loop, non-convertible website credits. They are not legal tender, cryptocurrency, securities, deposits, stored-value accounts or property with guaranteed cash value. TMT cannot be redeemed for money from Kyabia, and no investment return is promised. We may change prices, balances, issuance rules or features to address abuse, errors or service changes. Unauthorized sale, exchange or off-platform commercialization of TMT is prohibited.</p>
+      <h2>8. Prohibited conduct</h2>
+      <p>You may not use the Service for unlawful activity; threats; targeted harassment; doxxing; fraud; deliberate non-payment; malware; unauthorized access; spam; rights infringement; evasion of sanctions; manipulation of votes, tomatoes or balances; or publication of personal, confidential or classified information without lawful authority. You may not interfere with the Service, scrape it excessively, probe security controls or use automated accounts without written permission.</p>
+      <h2>9. Reports, moderation and internal arbitration</h2>
+      <p>Reports are reviewed by authorized staff. We may inspect relevant accounts, masks, submissions, transaction records and evidence. Outcomes may include warnings, content removal, transaction reversal, mask suspension, account suspension, fund freezing, compensation and, in severe substantiated cases, public disclosure. This is an internal platform review process and is not statutory or commercial arbitration. We do not promise any particular outcome or response time.</p>
+      <h2>10. Discord notifications and third parties</h2>
+      <p>If available, the Service may send account notifications through a Discord bot. Delivery is not guaranteed. Discord, Mojang, hosting providers and linked websites operate under their own terms and are not controlled by Kyabia. Your use of those services remains subject to their rules.</p>
+      <h2>11. Suspension and termination</h2>
+      <p>You may stop using the Service at any time. We may restrict, suspend or terminate access when we reasonably believe these Terms were violated, the account creates risk, a legal request requires action, or the Service is discontinued. Where appropriate, you may contact us to request review. Records may be retained when necessary for security, disputes, legal compliance and prevention of repeated abuse.</p>
+      <h2>12. Disclaimers</h2>
+      <p>THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, KYABIA DISCLAIMS IMPLIED WARRANTIES, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. WE DO NOT WARRANT UNINTERRUPTED OPERATION, PERMANENT STORAGE, ACCURACY OF USER CONTENT, DELIVERY OF DISCORD MESSAGES OR THE VALUE OF TMT.</p>
+      <h2>13. Limitation of liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, KYABIA WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, LOST DATA, LOST PROFITS, REPUTATIONAL HARM OR LOSSES ARISING FROM USER TRANSACTIONS. KYABIA’S AGGREGATE LIABILITY ARISING FROM THE SERVICE WILL NOT EXCEED US$100. Some jurisdictions do not allow certain limitations, so they apply only to the extent permitted.</p>
+      <h2>14. Indemnity</h2>
+      <p>You agree to defend and indemnify Kyabia from claims, liabilities and reasonable costs arising from your content, your transactions, your violation of these Terms or your infringement of another person’s rights, to the extent permitted by law.</p>
+      <h2>15. Governing law and venue</h2>
+      <p>These Terms are governed by the laws of the State of Ohio, without regard to conflict-of-law principles. Any dispute arising from these Terms or the Service must be brought exclusively in the state or federal courts located in Franklin County, Ohio, United States, and you consent to their personal jurisdiction. Nothing in this section removes non-waivable consumer rights that apply where you live.</p>
+      <h2>16. Changes and contact</h2>
+      <p>We may update these Terms. Material changes may require renewed acceptance or be announced through the Service. Continued use after an effective update constitutes acceptance where permitted by law. If a provision is unenforceable, the remainder stays effective. These Terms and incorporated policies are the entire agreement concerning the Service. Contact: <a href="mailto:zhiyu1091@gmail.com">zhiyu1091@gmail.com</a>.</p>
+    </article>
+  );
+}

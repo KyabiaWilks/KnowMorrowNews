@@ -1483,6 +1483,28 @@ button.chip:hover {
   gap: 10px;
 }
 
+.tavern-disclosures {
+  width: min(940px, 100%);
+  margin: 0 auto;
+  gap: 18px;
+}
+
+.tavern-disclosures header {
+  padding: 4px 2px 0;
+}
+
+.tavern-disclosure {
+  border-color: rgba(155, 53, 36, .38) !important;
+}
+
+.tavern-disclosure > .row:first-child strong {
+  font-size: 17px;
+}
+
+.tavern-disclosure__aliases {
+  gap: 6px;
+}
+
 @media (max-width: 700px) {
   .tavern-rules {
     gap: 14px;
@@ -1512,6 +1534,10 @@ button.chip:hover {
 
   .tavern-rules__actions .btn {
     flex: 1 1 180px;
+  }
+
+  .tavern-disclosure__aliases {
+    align-items: flex-start;
   }
 }
 
@@ -1942,6 +1968,99 @@ body { background: var(--paper-dim); }
 .km-discord { background: #5865f2; color: white; border-color: #5865f2; }
 .km-or { display: flex; align-items: center; gap: 12px; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .km-or::before,.km-or::after { content: ''; height: 1px; background: var(--line); flex: 1; }
+
+.km-login__card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.km-login__discord {
+  display: grid;
+  gap: 14px;
+  padding: 38px;
+  text-align: center;
+  background: linear-gradient(155deg, #f7f8ff, #eef0ff);
+}
+
+.km-login__discord-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 18px;
+  color: #fff;
+  background: #5865f2;
+  box-shadow: 0 14px 32px rgba(88, 101, 242, .28);
+  font-size: 29px;
+}
+
+.km-login__discord h2 {
+  margin: 3px 0 6px;
+  font-size: 37px;
+}
+
+.km-login__discord p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.km-login__discord .km-discord {
+  min-height: 54px;
+  padding: 15px 20px;
+  font-size: 16px;
+  font-weight: 760;
+}
+
+.km-legacy-toggle {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  padding: 19px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.km-legacy-toggle span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.km-legacy-toggle small {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.km-legacy-toggle span:last-child {
+  font-size: 23px;
+}
+
+.km-legacy-form {
+  padding: 4px 28px 28px;
+  border-top: 1px solid var(--line);
+  animation: fade .18s ease;
+}
+
+.km-login__legal {
+  padding: 15px 28px 20px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.km-login__legal a {
+  color: var(--blue-600);
+  font-weight: 650;
+}
 @media (max-width: 900px) {
   .km-hero, .km-login, .km-submit, .km-friends { grid-template-columns: 1fr; }
   .km-hero__art { display: none; }
@@ -2467,4 +2586,127 @@ main.page.page--tavern > .tavern {
   min-height: calc(100vh - var(--header-h));
   margin: 0;
   box-sizing: border-box;
+}
+
+.legal-page {
+  width: min(820px, 100%);
+  margin: 0 auto;
+  padding-bottom: 42px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.legal-page__head {
+  margin-bottom: 30px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--navy-700);
+}
+
+.legal-page__head p {
+  margin: 8px 0 0;
+  color: var(--ink-faint);
+  font: 13px/1.5 var(--font);
+}
+
+.legal-page h2 {
+  margin: 32px 0 8px;
+  color: var(--navy-800);
+  font: 750 21px/1.3 var(--font);
+}
+
+.legal-page h3 {
+  margin: 21px 0 5px;
+  color: var(--navy-700);
+  font: 720 16px/1.35 var(--font);
+}
+
+.legal-page p {
+  margin: 0 0 14px;
+}
+
+.legal-page ul {
+  margin: 8px 0 18px;
+  padding-left: 22px;
+}
+
+.legal-page a {
+  color: var(--blue-600);
+  text-decoration: underline;
+}
+
+.cookie-consent {
+  position: fixed;
+  z-index: 260;
+  left: 18px;
+  right: 220px;
+  bottom: 18px;
+  width: min(760px, calc(100vw - 256px));
+  padding: 17px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+}
+
+.cookie-consent p {
+  margin: 4px 0 7px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cookie-consent__links,
+.cookie-consent__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cookie-consent__links a {
+  color: var(--blue-600);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.cookie-consent__actions {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 700px) {
+  .km-login__discord {
+    padding: 28px 22px;
+  }
+
+  .km-login__discord h2 {
+    font-size: 31px;
+  }
+
+  .km-legacy-toggle,
+  .km-legacy-form {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .cookie-consent {
+    left: 10px;
+    right: 10px;
+    bottom: 94px;
+    width: auto;
+    padding: 15px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    border-radius: 11px;
+  }
+
+  .cookie-consent__actions .btn {
+    flex: 1;
+  }
 }
