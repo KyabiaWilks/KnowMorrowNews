@@ -6,6 +6,7 @@ import { Spinner, TagChip } from '../components/ui';
 import { fmtDate, tmt } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { TomatoIcon } from '../components/TomatoIcon';
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -45,8 +46,7 @@ export default function ArticlePage() {
     <aside className="stack" style={{ position: 'sticky', top: 'calc(var(--header-h) + 20px)' }}>
       <div className="card card--pad stack"><div className="eyebrow">CONTRIBUTORS</div>{article.authorCards.map((author) => <Link key={author.id} to={`/journalists/${author.id}`} className="row" style={{ gap: 11 }}><div className="jnl-portrait" style={{ width: 44, height: 44, fontSize: 17, background: 'linear-gradient(135deg,#2f6bff,#0b2545)' }}>{author.name.slice(0, 1)}</div><div><div style={{ fontWeight: 700, fontSize: 14 }}>{author.name}</div><div className="muted">{author.title}</div></div></Link>)}{article.authorCards.length === 0 && <div className="muted">Know Morrow Editorial Desk</div>}</div>
       <div className="card card--pad stack">
-        <div className="eyebrow">TIP WITH TOMATOES</div>
-        <strong style={{ fontSize: 20 }}>🍅 {article.tomatoTips.toLocaleString('en-US', { maximumFractionDigits: 2 })} TMT</strong>
+        <div className="tomato-tip-heading"><TomatoIcon variant={4} size={58} /><div><div className="eyebrow">TIP WITH TOMATOES</div><strong style={{ fontSize: 20 }}>{article.tomatoTips.toLocaleString('en-US', { maximumFractionDigits: 2 })} TMT</strong></div></div>
         <div className="muted">Reward reporting with at least 1 TMT.</div>
         <input className="input" type="number" min={1} max={100000} step={1} value={tipAmount} onChange={(event) => setTipAmount(Math.max(1, Number(event.target.value) || 1))} />
         <button className="btn btn--primary btn--block" disabled={tipping || user?.readOnly} onClick={tipStory}>{tipping ? 'Sending…' : user ? 'Tip this news' : 'Sign in to tip'}</button>

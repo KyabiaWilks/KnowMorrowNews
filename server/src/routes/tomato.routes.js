@@ -6,7 +6,13 @@ import { debit, profileById } from '../services.js';
 import { bad, missing, now, uid, wrap, HttpError } from '../util.js';
 
 export const tomatoRouter = Router();
-const SPLATS = ['splat-a', 'splat-b', 'splat-c', 'splat-d'];
+const pickTomatoVariant = () => {
+  const roll = Math.random();
+  if (roll < 0.005) return 'tmt5';
+  if (roll < 0.02) return 'tmt4';
+  if (roll < 0.12) return 'tmt3';
+  return 'tmt1';
+};
 const PRIVATE_PAGES = ['/desk', '/profile', '/masks', '/wallet', '/notifications', '/admin', '/tavern/desk'];
 const isPrivatePage = (page) => PRIVATE_PAGES.some((prefix) => page === prefix || page.startsWith(`${prefix}/`));
 const shape = (tomato) => ({
@@ -45,7 +51,7 @@ tomatoRouter.post('/', requireAuth, wrap((req, res) => {
   const tomato = {
     id: uid('tmt'), page, x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100,
     rot: Math.round(Math.random() * 360), scale: .8 + Math.random() * .6,
-    splat: SPLATS[Math.floor(Math.random() * SPLATS.length)], note, alias,
+    splat: pickTomatoVariant(), note, alias,
     userId: req.user.id, profileId: req.body.profileId || null, hidden: false, createdAt: now(),
   };
   db.tomatoes.unshift(tomato);

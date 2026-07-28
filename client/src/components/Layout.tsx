@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { TomatoLayer, TomatoToolbar } from './TomatoLayer';
 import { NotificationBell } from './NotificationBell';
 import { CookieConsent } from './CookieConsent';
+import { TomatoIcon } from './TomatoIcon';
 
 const NAV = [
   { to: '/', label: 'Front Page', end: true },
@@ -62,7 +63,7 @@ export function Layout() {
           <div className="masthead__right desktop-header-actions">
             {user ? (
               <>
-                <Link to="/wallet" className="coin-pill">🍅 {user.wallet.coins.toLocaleString('en-US')}</Link>
+                <Link to="/wallet" className="coin-pill"><TomatoIcon size={22} /> {user.wallet.coins.toLocaleString('en-US')}</Link>
                 <NotificationBell />
                 <Link to="/profile" className="btn btn--sm">
                   {user.displayName}
@@ -78,7 +79,7 @@ export function Layout() {
             )}
           </div>
           <div className="mobile-header-actions">
-            {user && <Link to="/wallet" className="coin-pill" aria-label={`${user.wallet.coins} Tomato Coins`}>🍅 {user.wallet.coins.toLocaleString('en-US')}</Link>}
+            {user && <Link to="/wallet" className="coin-pill" aria-label={`${user.wallet.coins} Tomato Coins`}><TomatoIcon size={22} /> {user.wallet.coins.toLocaleString('en-US')}</Link>}
             {user && <NotificationBell />}
             <button
               type="button"

@@ -4,6 +4,7 @@ import { get, qs } from '../lib/api';
 import type { NewsItem } from '../lib/types';
 import { Empty, SearchBox, Spinner, TagChip } from '../components/ui';
 import { fmtDate } from '../lib/format';
+import { TomatoIcon } from '../components/TomatoIcon';
 
 type Facets = { sections: string[]; tags: { label: string; count: number }[]; total: number };
 
@@ -65,7 +66,7 @@ export default function NewsPage() {
         <div className="article-card__cover"><span>{article.section}</span></div>
         <div style={{ padding: 18 }} className="stack"><h3 style={{ fontSize: 17.5 }}>{article.title}</h3><p className="muted" style={{ fontSize: 13.5, margin: 0 }}>{article.summary}</p>
           <div className="row" style={{ gap: 6 }}>{article.tags.slice(0, 3).map((value) => <TagChip key={value} label={value} />)}</div>
-          <div className="row row--between muted"><span>{article.authors.join(' · ') || 'Know Morrow Editorial Desk'}</span><span>🍅 {article.tomatoTips.toLocaleString('en-US', { maximumFractionDigits: 2 })} · {fmtDate(article.publishedAt)}</span></div>
+          <div className="row row--between muted"><span>{article.authors.join(' · ') || 'Know Morrow Editorial Desk'}</span><span className="row"><TomatoIcon size={18} /> {article.tomatoTips.toLocaleString('en-US', { maximumFractionDigits: 2 })} · {fmtDate(article.publishedAt)}</span></div>
         </div>
       </Link>)}</div>
       {pages > 1 && <div className="row" style={{ justifyContent: 'center', marginTop: 12 }}>{Array.from({ length: pages }, (_, index) => index + 1).map((value) => <button key={value} className={`chip ${value === page ? 'chip--on' : ''}`} onClick={() => setParam('page', String(value))}>{value}</button>)}</div>}
