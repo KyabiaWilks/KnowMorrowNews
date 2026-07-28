@@ -18,7 +18,7 @@ authRouter.get('/minecraft-avatar/:uuid', wrap(async (req, res) => {
   const uuid = String(req.params.uuid || '').replaceAll('-', '');
   if (!/^[a-f0-9]{32}$/i.test(uuid)) throw bad('Invalid Minecraft UUID.');
   try {
-    const image = await fetch(`https://crafatar.com/avatars/${uuid}?size=64&overlay`, {
+    const image = await fetch(`https://mc-heads.net/avatar/${uuid}/64`, {
       headers: { 'user-agent': 'KnowMorrowNews/1.0' },
     });
     if (!image.ok) throw new Error(`Avatar provider returned ${image.status}`);
