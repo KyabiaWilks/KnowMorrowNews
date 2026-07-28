@@ -46,6 +46,7 @@ export function TavernNotice() {
   return (
     <Modal
       open={open}
+      className="modal--tavern-notice"
       dismissable={false}
       onClose={() => {}}
       title="Before entering the Tavern, read these four rules"

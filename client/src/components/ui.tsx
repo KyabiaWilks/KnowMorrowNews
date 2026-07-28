@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Mask, Tag } from '../lib/types';
 
 export function Spinner({ label = 'Loading' }: { label?: string }) {
@@ -30,6 +31,7 @@ export function Modal({
   footer,
   wide,
   dismissable = true,
+  className,
 }: {
   open: boolean;
   title: ReactNode;
@@ -39,18 +41,24 @@ export function Modal({
   footer?: ReactNode;
   wide?: boolean;
   dismissable?: boolean;
+  className?: string;
 }) {
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dismissable && onClose();
+    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
   }, [open, onClose, dismissable]);
 
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="modal-backdrop" onClick={() => dismissable && onClose()}>
-      <div className={`modal ${wide ? 'modal--wide' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${wide ? 'modal--wide' : ''} ${className ?? ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal__head">
           <div>
             <h3 style={{ fontSize: 19 }}>{title}</h3>
@@ -65,7 +73,8 @@ export function Modal({
         <div className="modal__body">{children}</div>
         {footer && <div className="modal__foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
