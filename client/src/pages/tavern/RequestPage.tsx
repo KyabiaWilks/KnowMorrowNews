@@ -86,7 +86,7 @@ export default function RequestPage() {
     <div className="tavern stack" style={{ gap: 20 }}>
       <TavernNotice />
       <Link to="/tavern" className="muted">
-        ← Back to the Newsroom
+        ← Back to the Tavern
       </Link>
 
       <div className="card card--pad stack">
@@ -203,7 +203,7 @@ export default function RequestPage() {
         open={open}
         onClose={() => setOpen(false)}
         title="Submit information"
-        subtitle="Only the requester can read this submission. The arbitration team may inspect it if a dispute is opened."
+        subtitle="Only the requester can read this submission. The Tavern arbitration team may inspect it if a dispute is opened."
         footer={
           <>
             <button className="btn" onClick={() => setOpen(false)}>

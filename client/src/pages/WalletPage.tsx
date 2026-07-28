@@ -26,11 +26,11 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const KIND_DESCRIPTION: Record<string, string> = {
-  grant: 'Opening newsroom allocation',
+  grant: 'Opening Tavern allocation',
   topup: 'Tomato harvest demonstration credit',
   tomato_throw: 'A tomato was thrown',
-  offer_purchase: 'Purchased access to a newsroom disclosure',
-  offer_income: 'Proceeds from a newsroom disclosure',
+  offer_purchase: 'Purchased access to a Tavern disclosure',
+  offer_income: 'Proceeds from a Tavern disclosure',
   escrow_lock: 'Funds reserved for a reporting request',
   escrow_release: 'Unused request funds returned',
   escrow_settle: 'Payment released from request escrow',
@@ -76,7 +76,7 @@ export default function WalletPage() {
       <div>
         <div className="eyebrow">TOMATO COIN</div>
         <h1 className="page-title">My Tomato Wallet</h1>
-        <div className="page-sub">Throw TMT across the newsroom, or spend it on information someone would rather keep quiet.</div>
+        <div className="page-sub">Throw TMT across the Tavern, or spend it on information someone would rather keep quiet.</div>
       </div>
     </div>
 
@@ -100,10 +100,10 @@ export default function WalletPage() {
       </section>
 
       {['admin', 'read_only_admin'].includes(user?.siteRole || '') && <section className="card card--pad stack">
-        <div><div className="eyebrow">OFFICIAL TRANSFER</div><h2>Issue Newsroom Funds</h2></div>
+        <div><div className="eyebrow">OFFICIAL TRANSFER</div><h2>Issue Tavern Funds</h2></div>
         <label className="field"><span>Recipient</span><RecipientSearch value={official.recipient} onChange={(recipient) => setOfficial({ ...official, recipient })} /></label>
         <label className="field"><span>Amount</span><input className="input" type="number" min={1} max={1000000} value={official.amount} onChange={(event) => setOfficial({ ...official, amount: Number(event.target.value) })} /></label>
-        <label className="field"><span>Official memo</span><input className="input" value={official.memo} onChange={(event) => setOfficial({ ...official, memo: event.target.value })} placeholder="Newsroom allocation" /></label>
+        <label className="field"><span>Official memo</span><input className="input" value={official.memo} onChange={(event) => setOfficial({ ...official, memo: event.target.value })} placeholder="Tavern allocation" /></label>
         <button className="btn btn--tomato" disabled={busy || !official.recipient || official.amount < 1} onClick={() => sendTransfer(true)}>Issue {tmt(official.amount)}</button>
       </section>}
     </div>

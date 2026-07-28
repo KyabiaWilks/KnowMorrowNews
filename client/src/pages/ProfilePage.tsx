@@ -26,7 +26,7 @@ export default function ProfilePage() {
   };
 
   return <div className="stack" style={{ gap: 20 }}>
-    <div className="page-head"><div><div className="eyebrow">ACCOUNT PROFILE</div><h1 className="page-title">{user.displayName}</h1><div className="page-sub">Manage the identities used to recognize you in transfers and newsroom tools.</div></div></div>
+    <div className="page-head"><div><div className="eyebrow">ACCOUNT PROFILE</div><h1 className="page-title">{user.displayName}</h1><div className="page-sub">Manage the identities used to recognize you in transfers and Tavern tools.</div></div></div>
     <section className="card card--pad profile-identity">
       <div className="profile-identity__avatar">{user.avatar ? <img src={user.avatar} alt="" /> : user.displayName.slice(0, 1).toUpperCase()}</div>
       <div className="stack" style={{ gap: 5 }}>
@@ -43,6 +43,6 @@ export default function ProfilePage() {
       </div>
       {user.minecraftUuid && <div className="row"><img className="mc-avatar" src={`https://crafatar.com/avatars/${user.minecraftUuid}?size=64&overlay`} alt={`${user.minecraftId || 'Minecraft'} avatar`} /><div><strong>{user.minecraftId}</strong><div className="muted">Verified through Mojang</div></div></div>}
     </section>
-    <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Newsroom identities.</div></div><Link className="btn" to="/masks">Manage masks</Link></section>
+    <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Tavern identities.</div></div><Link className="btn" to="/masks">Manage masks</Link></section>
   </div>;
 }

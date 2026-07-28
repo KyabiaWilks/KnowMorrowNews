@@ -414,7 +414,7 @@ tavernRouter.post(
     const requestOwner = userOfProfile(request.profileId);
     if (requestOwner) {
       notify(requestOwner.id, {
-        type: 'newsroom_reply',
+        type: 'tavern_reply',
         title: 'New reply to your reporting request',
         message: `A contributor replied to “${request.title}” under the ${tier.name} reward tier.`,
         href: `/tavern/requests/${request.id}`,
@@ -444,7 +444,7 @@ tavernRouter.post(
       const supplier = userOfProfile(submission.profileId);
       if (supplier) notify(supplier.id, {
         type: 'submission_update',
-        title: 'Newsroom submission updated',
+        title: 'Tavern submission updated',
         message: `Your reply to “${request.title}” was not accepted.`,
         href: `/tavern/requests/${request.id}`,
       });
@@ -461,7 +461,7 @@ tavernRouter.post(
     submission.paid = tier.price;
     notify(supplier.id, {
       type: 'submission_update',
-      title: 'Newsroom submission accepted',
+      title: 'Tavern submission accepted',
       message: `Your reply to “${request.title}” was accepted. ${tier.price} TMT has been released to your wallet.`,
       href: `/tavern/requests/${request.id}`,
     });

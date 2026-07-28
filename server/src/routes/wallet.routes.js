@@ -102,7 +102,7 @@ walletRouter.post('/official-transfer', requireAuth, requireAdmin, wrap((req, re
     : db.users.find((item) => item.username.toLowerCase() === username);
   if (!recipient) throw bad('Recipient not found.');
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) throw bad('Official transfer must be between 1 and 1,000,000 TMT.');
-  const memo = String(req.body.memo || 'Official newsroom allocation').trim().slice(0, 160);
+  const memo = String(req.body.memo || 'Official Tavern allocation').trim().slice(0, 160);
   const transferId = uid('off');
   recipient.coins = (recipient.coins ?? 0) + amount;
   record(recipient.id, amount, 'official_transfer', memo, { type: 'official_transfer', id: transferId });

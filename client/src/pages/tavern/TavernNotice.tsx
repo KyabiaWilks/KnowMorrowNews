@@ -48,7 +48,7 @@ export function TavernNotice() {
       open={open}
       dismissable={false}
       onClose={() => {}}
-      title="Before entering the Newsroom, read these four rules"
+      title="Before entering the Tavern, read these four rules"
       subtitle="This notice appears on every visit unless you choose not to show it again."
       footer={(
         <div className="tavern-notice__footer">

@@ -34,7 +34,7 @@ export default function NotificationsPage() {
 
   return <div className="stack" style={{ gap: 20 }}>
     <div className="page-head">
-      <div><div className="eyebrow">NEWSROOM SIGNALS</div><h1 className="page-title">Notifications</h1><div className="page-sub">Replies, transfers and editorial activity addressed to you.</div></div>
+      <div><div className="eyebrow">TAVERN SIGNALS</div><h1 className="page-title">Notifications</h1><div className="page-sub">Replies, transfers and editorial activity addressed to you.</div></div>
       {data.unread > 0 && <button className="btn" onClick={readAll}>Mark all as read</button>}
     </div>
     <div className="stack">

@@ -22,7 +22,7 @@ export default function ArticlePage() {
     <aside className="stack" style={{ position: 'sticky', top: 'calc(var(--header-h) + 20px)' }}>
       <div className="card card--pad stack"><div className="eyebrow">CONTRIBUTORS</div>{article.authorCards.map((author) => <Link key={author.id} to={`/journalists/${author.id}`} className="row" style={{ gap: 11 }}><div className="jnl-portrait" style={{ width: 44, height: 44, fontSize: 17, background: 'linear-gradient(135deg,#2f6bff,#0b2545)' }}>{author.name.slice(0, 1)}</div><div><div style={{ fontWeight: 700, fontSize: 14 }}>{author.name}</div><div className="muted">{author.title}</div></div></Link>)}{article.authorCards.length === 0 && <div className="muted">Know Morrow Editorial Desk</div>}</div>
       {related.length > 0 && <div className="card card--pad stack"><div className="eyebrow">RELATED STORIES</div>{related.map((item) => <Link key={item.id} to={`/news/${item.id}`} className="stack" style={{ gap: 3 }}><div style={{ fontWeight: 650, fontSize: 14 }}>{item.title}</div><div className="muted">{fmtDate(item.publishedAt)}</div></Link>)}</div>}
-      <div className="card card--pad"><div className="eyebrow">HAVE A LEAD?</div><p className="muted" style={{ marginTop: 8 }}>Bring it to the Newsroom. Confidential submissions can be filed under a mask.</p><Link to="/tavern/compose" className="btn btn--sm btn--primary btn--block">Submit a tip</Link></div>
+      <div className="card card--pad"><div className="eyebrow">HAVE A LEAD?</div><p className="muted" style={{ marginTop: 8 }}>Bring it to the Tavern. Confidential submissions can be filed under a mask.</p><Link to="/tavern/compose" className="btn btn--sm btn--primary btn--block">Submit a tip</Link></div>
     </aside>
   </div>;
 }

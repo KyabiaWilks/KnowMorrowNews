@@ -17,7 +17,7 @@ import { notificationsRouter } from './routes/notifications.routes.js';
 
 if (isEmpty()) {
   console.log('[jontop] 数据库为空，正在写入初始内容…');
-  seedDatabase();
+  await seedDatabase();
 }
 
 const app = express();

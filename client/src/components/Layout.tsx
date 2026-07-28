@@ -8,7 +8,7 @@ const NAV = [
   { to: '/', label: 'Front Page', end: true },
   { to: '/news', label: 'Stories' },
   { to: '/journalists', label: 'Contributors' },
-  { to: '/tavern', label: 'The Newsroom' },
+  { to: '/tavern', label: 'The Tavern' },
   { to: '/tavern/desk', label: 'My Desk' },
 ];
 

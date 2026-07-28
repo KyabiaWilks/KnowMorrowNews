@@ -120,7 +120,7 @@ export default function ComposePage() {
         <div className="card card--pad stack" style={{ textAlign: 'center', padding: 44 }}>
           <div style={{ fontSize: 40 }}>🎭</div>
           <h2>You do not have an active mask</h2>
-          <div className="muted">Nobody posts under a real account name. Create a mask before returning to the Newsroom.</div>
+          <div className="muted">Nobody posts under a real account name. Create a mask before returning to the Tavern.</div>
           <Link to="/masks" className="btn btn--primary" style={{ margin: '0 auto' }}>
             Create a mask
           </Link>
@@ -135,7 +135,7 @@ export default function ComposePage() {
       <div className="page-head">
         <div>
           <div className="eyebrow">COMPOSE</div>
-          <h1 className="page-title" style={{ color: '#f2f6ff' }}>Post to the Newsroom</h1>
+          <h1 className="page-title">Post to the Tavern</h1>
           <div className="page-sub" style={{ color: '#8ba4cf' }}>
             Sell a tip on the wall, or fund a reporting request with escrow.
           </div>

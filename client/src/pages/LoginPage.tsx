@@ -40,7 +40,7 @@ export default function LoginPage() {
         <p>New accounts are created exclusively through the Know Morrow Discord community.</p>
       </section>
       <section className="card card--pad stack km-login__card">
-        <h2>Enter the newsroom</h2>
+        <h2>Enter the Tavern</h2>
         <a className="btn km-discord btn--block" href="/api/auth/discord">Continue with Discord</a>
         <div className="km-or"><span>existing legacy account</span></div>
         <form className="stack" onSubmit={submit}>
