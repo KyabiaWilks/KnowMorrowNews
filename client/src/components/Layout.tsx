@@ -144,7 +144,7 @@ export function Layout() {
         </div>
       </aside>
 
-      <main className={location.pathname.startsWith('/tavern') ? 'page page--wide' : 'page'}><Outlet /></main>
+      <main className={location.pathname.startsWith('/tavern') ? 'page page--tavern' : 'page'}><Outlet /></main>
       <footer className="footer">
         <div className="footer__inner">
           <div><strong>Know Morrow News</strong> — Every tale can prove useful. Every story deserves to be told.</div>

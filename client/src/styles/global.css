@@ -114,6 +114,11 @@ p {
   width: min(1480px, 100% - 40px);
 }
 
+.page--tavern {
+  width: 100%;
+  padding: 0;
+}
+
 .page-head {
   display: flex;
   align-items: flex-end;
@@ -1217,119 +1222,146 @@ button.chip:hover {
 /* -------------------------------- 酒馆 -------------------------------- */
 
 .tavern {
-  --tv-bg: #24140d;
+  --tv-bg: #b8a594;
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - var(--header-h));
   background:
-    radial-gradient(80% 60% at 50% 0%, rgba(196, 112, 46, .2), transparent 70%),
-    linear-gradient(145deg, #3a2115 0%, #24140d 58%, #180e0a 100%);
-  color: #f3dfbf;
-  border: 1px solid #704226;
-  border-radius: 10px;
-  padding: 26px;
-  box-shadow: inset 0 1px rgba(255, 226, 175, .08), 0 18px 45px rgba(45, 20, 7, .18);
+    linear-gradient(180deg, rgba(241, 218, 166, .2), transparent 240px),
+    linear-gradient(145deg, #c8b8a8 0%, #b8a594 55%, #aa9685 100%);
+  color: #44362f;
+  border: 0;
+  border-radius: 0;
+  padding: 34px max(20px, calc((100vw - 1480px) / 2)) 84px;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.tavern::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -145px;
+  left: 50%;
+  width: min(920px, 88vw);
+  height: 310px;
+  transform: translateX(-50%) scale(.94);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 211, 103, .62) 0%, rgba(245, 191, 81, .28) 36%, transparent 72%);
+  filter: blur(24px);
+  animation: tavern-warm-breathe 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tavern-warm-breathe {
+  50% {
+    opacity: .58;
+    transform: translateX(-50%) scale(1.08);
+  }
 }
 
 .tavern h1,
 .tavern h2,
 .tavern h3 {
-  color: #fff0ce;
+  color: #382a24;
 }
 
 .tavern .card {
-  background: rgba(255, 235, 199, .055);
-  border-color: rgba(220, 153, 87, .28);
-  color: #f3dfbf;
-  box-shadow: none;
+  background: rgba(245, 238, 228, .66);
+  border-color: rgba(100, 73, 58, .2);
+  color: #44362f;
+  box-shadow: 0 8px 24px rgba(70, 49, 38, .07);
 }
 
 .tavern .card--hover:hover {
-  border-color: rgba(236, 178, 103, .65);
-  background: rgba(255, 226, 175, .09);
+  border-color: rgba(139, 95, 65, .4);
+  background: rgba(250, 244, 235, .82);
 }
 
 .tavern .muted {
-  color: #d3b58e;
+  color: #756359;
 }
 
 .tavern .soft {
-  color: #e5cba6;
+  color: #594940;
 }
 
 .tavern a:not(.btn) {
-  color: #f1c27d;
+  color: #744b34;
 }
 
 .tavern a:not(.btn):hover {
-  color: #fff1c9;
+  color: #4d3021;
 }
 
 .tavern .input,
 .tavern .textarea,
 .tavern .select {
-  background: rgba(20, 10, 6, .46);
-  border-color: rgba(220, 153, 87, .34);
-  color: #fff0d2;
+  background: rgba(255, 251, 244, .62);
+  border-color: rgba(104, 76, 60, .26);
+  color: #3f312a;
 }
 
 .tavern .input::placeholder,
 .tavern .textarea::placeholder {
-  color: #a98461;
+  color: #8d776a;
 }
 
 .tavern .btn {
-  background: rgba(255, 224, 178, .08);
-  border-color: rgba(220, 153, 87, .38);
-  color: #f6dfbd;
+  background: rgba(248, 241, 231, .7);
+  border-color: rgba(104, 76, 60, .28);
+  color: #4c382e;
 }
 
 .tavern .btn--primary {
-  background: linear-gradient(135deg, #a94f24, #d37a34);
-  border-color: #e0934c;
-  color: #fff5df;
+  background: #94694f;
+  border-color: #815a44;
+  color: #fffaf2;
 }
 
 .tavern .chip {
-  background: rgba(218, 147, 79, .12);
-  border-color: rgba(218, 147, 79, .32);
-  color: #ebc896;
+  background: rgba(244, 234, 221, .62);
+  border-color: rgba(111, 80, 62, .25);
+  color: #5e4639;
 }
 
 .tavern .chip--on {
-  background: #a95025;
-  border-color: #d17b38;
-  color: #fff2d6;
+  background: #8d654f;
+  border-color: #7c5744;
+  color: #fffaf2;
 }
 
 .tavern .table th {
-  color: #bd966e;
-  border-color: rgba(218, 147, 79, .24);
+  color: #745f53;
+  border-color: rgba(99, 73, 59, .2);
 }
 
 .tavern .table td {
-  border-color: rgba(218, 147, 79, .14);
+  border-color: rgba(99, 73, 59, .13);
 }
 
 .tavern .table tr:hover td {
-  background: rgba(218, 147, 79, .09);
+  background: rgba(255, 249, 239, .38);
 }
 
 .tavern .page-sub {
-  color: #d3b58e !important;
+  color: #6c584d !important;
 }
 
 .tavern .eyebrow {
-  color: #e6a85f;
+  color: #78533e;
 }
 
 .tavern-slogan {
   margin: 4px 0 8px;
-  color: #f0b96f;
+  color: #82583e;
   font: italic 700 15px/1.2 var(--serif);
   letter-spacing: .04em;
 }
 
 .tavern .modal {
-  background: linear-gradient(155deg, #3b2318, #21130d);
-  border: 1px solid #80502f;
+  background: linear-gradient(155deg, #806858, #5f4b40);
+  border: 1px solid #9f8774;
   color: #f6e6ca;
 }
 
@@ -2216,7 +2248,9 @@ body { background: var(--paper-dim); }
 
 @media (prefers-reduced-motion: reduce) {
   .mobile-drawer,
-  .mobile-drawer-backdrop {
+  .mobile-drawer-backdrop,
+  .tavern::before {
     transition: none;
+    animation: none;
   }
 }
