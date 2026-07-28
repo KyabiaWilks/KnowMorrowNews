@@ -1727,11 +1727,19 @@ body { background: var(--paper-dim); }
   width: min(1180px, 100% - 40px);
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
-  gap: 18px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-right: 230px;
   flex-wrap: wrap;
   color: var(--ink-faint);
   font-size: 13px;
+}
+
+.footer__inner > .row {
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .toast-stack {
@@ -2058,6 +2066,7 @@ body { background: var(--paper-dim); }
   .footer__inner {
     width: calc(100% - 28px);
     flex-direction: column;
+    padding-right: 190px;
   }
 
   .footer__inner > .row {
@@ -2129,16 +2138,28 @@ body { background: var(--paper-dim); }
   }
 
   .footer {
-    padding: 22px 0;
+    padding: 22px 0 96px;
   }
 
   .footer__inner {
     width: calc(100% - 20px);
+    padding-right: 0;
   }
 
   .footer__inner > .row {
     flex-direction: column;
+    align-items: flex-start;
     gap: 10px !important;
+  }
+
+  .tomato-toolbar {
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .tomato-fab {
+    padding: 9px 12px;
+    font-size: 12px;
   }
 }
 
