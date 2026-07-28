@@ -166,9 +166,9 @@ authRouter.post(
     const password = String(req.body.password || '');
     const displayName = String(req.body.displayName || '').trim() || username;
 
-    if (!/^[a-zA-Z0-9_.-]{3,24}$/.test(username)) throw bad('用户名需为 3-24 位字母、数字、_ . -');
-    if (password.length < 6) throw bad('密码至少 6 位');
-    if (db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) throw bad('该用户名已被占用');
+    if (!/^[a-zA-Z0-9_.-]{3,24}$/.test(username)) throw bad('Username must be 3–24 characters and may contain letters, numbers, underscores, periods and hyphens.');
+    if (password.length < 6) throw bad('Password must be at least 6 characters.');
+    if (db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) throw bad('That username is already in use.');
 
     const user = {
       id: uid('usr'),
@@ -185,7 +185,7 @@ authRouter.post(
       createdAt: now(),
     };
     db.users.push(user);
-    record(user.id, WELCOME_COINS, 'grant', '新读者见面礼');
+    record(user.id, WELCOME_COINS, 'grant', 'New reader welcome grant');
     save();
     res.json({ token: issueToken(user), user: publicUser(user) });
   })
@@ -197,9 +197,9 @@ authRouter.post(
     const username = String(req.body.username || '').trim();
     const user = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
     if (!user || !verifyPassword(String(req.body.password || ''), user.password)) {
-      throw new HttpError(401, '用户名或密码不正确');
+      throw new HttpError(401, 'Incorrect username or password.');
     }
-    if (user.banned) throw new HttpError(403, `账号已被封禁：${user.banReason || '违反酒馆规约'}`);
+    if (user.banned) throw new HttpError(403, `This account has been suspended: ${user.banReason || 'Tavern rules violation'}`);
     res.json({ token: issueToken(user), user: publicUser(user) });
   })
 );
@@ -210,7 +210,7 @@ authRouter.get(
   wrap((req, res) => res.json({ user: publicUser(req.user) }))
 );
 
-/** 首次进入酒馆的规约确认 */
+/** First-visit Tavern rules acknowledgement. */
 authRouter.post(
   '/ack-notice',
   requireAuth,
@@ -227,12 +227,12 @@ authRouter.patch(
   wrap(async (req, res) => {
     if (req.body.displayName !== undefined) {
       const name = String(req.body.displayName).trim();
-      if (name.length < 1 || name.length > 32) throw bad('昵称长度需在 1-32 之间');
+      if (name.length < 1 || name.length > 32) throw bad('Display name must be between 1 and 32 characters.');
       req.user.displayName = name;
     }
     if (req.body.newPassword) {
-      if (!verifyPassword(String(req.body.currentPassword || ''), req.user.password)) throw bad('当前密码不正确');
-      if (String(req.body.newPassword).length < 6) throw bad('新密码至少 6 位');
+      if (!verifyPassword(String(req.body.currentPassword || ''), req.user.password)) throw bad('The current password is incorrect.');
+      if (String(req.body.newPassword).length < 6) throw bad('The new password must be at least 6 characters.');
       req.user.password = hashPassword(String(req.body.newPassword));
     }
     if (req.body.minecraftId !== undefined) {
