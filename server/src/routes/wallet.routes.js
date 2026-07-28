@@ -9,7 +9,7 @@ export const walletRouter = Router();
 
 walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
   const query = String(req.query.q || '').trim().toLowerCase();
-  if (query.length < 2) return res.json({ items: [] });
+  if (query.length < 1) return res.json({ items: [] });
   const items = db.users
     .filter((user) => user.id !== req.user.id && !user.banned)
     .map((user) => {
@@ -35,6 +35,17 @@ walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
       };
     })
     .filter(Boolean)
+    .sort((a, b) => {
+      const score = (item) => {
+        const values = [item.username, item.displayName, item.minecraftId, item.id, item.mask?.alias]
+          .filter(Boolean)
+          .map((value) => String(value).toLowerCase());
+        if (values.some((value) => value === query)) return 0;
+        if (values.some((value) => value.startsWith(query))) return 1;
+        return 2;
+      };
+      return score(a) - score(b) || a.displayName.localeCompare(b.displayName);
+    })
     .slice(0, 12);
   res.json({ items });
 }));

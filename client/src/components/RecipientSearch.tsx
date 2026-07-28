@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { get, qs } from '../lib/api';
 
 export type RecipientMatch = {
@@ -16,18 +16,29 @@ export function RecipientSearch({ value, onChange }: { value: RecipientMatch | n
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<RecipientMatch[]>([]);
   const [loading, setLoading] = useState(false);
+  const requestSequence = useRef(0);
 
   useEffect(() => {
-    if (value || query.trim().length < 2) {
+    const normalized = query.trim();
+    const sequence = ++requestSequence.current;
+    if (value || normalized.length < 1) {
       setItems([]);
+      setLoading(false);
       return;
     }
+    setLoading(true);
     const timer = window.setTimeout(() => {
-      setLoading(true);
-      void get<{ items: RecipientMatch[] }>(`/wallet/recipients${qs({ q: query.trim() })}`)
-        .then((result) => setItems(result.items))
-        .finally(() => setLoading(false));
-    }, 250);
+      void get<{ items: RecipientMatch[] }>(`/wallet/recipients${qs({ q: normalized })}`)
+        .then((result) => {
+          if (sequence === requestSequence.current) setItems(result.items);
+        })
+        .catch(() => {
+          if (sequence === requestSequence.current) setItems([]);
+        })
+        .finally(() => {
+          if (sequence === requestSequence.current) setLoading(false);
+        });
+    }, 120);
     return () => window.clearTimeout(timer);
   }, [query, value]);
 
@@ -39,7 +50,7 @@ export function RecipientSearch({ value, onChange }: { value: RecipientMatch | n
 
   return <div className="recipient-search">
     <input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nickname, user ID, MC ID or mask…" />
-    {query.trim().length >= 2 && <div className="recipient-results">
+    {query.trim().length >= 1 && <div className="recipient-results">
       {items.map((recipient) => <button type="button" key={recipient.id} className="recipient-result" onClick={() => onChange(recipient)}>
         <RecipientAvatar recipient={recipient} />
         <span style={{ flex: 1 }}><strong>{recipient.displayName}</strong><span className="muted">@{recipient.username}{recipient.minecraftId ? ` · MC ${recipient.minecraftId}` : ''}</span></span>
