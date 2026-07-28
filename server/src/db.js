@@ -18,6 +18,7 @@ const EMPTY = {
   evidence: [],
   reports: [],
   arbitrations: [],
+  arbitrationJudgments: [],
   tomatoes: [],
   transactions: [],
   auditLog: [],

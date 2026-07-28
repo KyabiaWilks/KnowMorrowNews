@@ -26,6 +26,62 @@ const MAX_PROFILES = 6;
 const TAG_EN = { '有详细证据': 'Detailed evidence', '没有详细证据': 'No detailed evidence', '军事': 'Military', '外交': 'Diplomacy', '能源': 'Energy', '内部人事': 'Internal affairs', '卫星影像': 'Satellite imagery', '时效性强': 'Time-sensitive', '高风险': 'High risk', '经济': 'Economy', '基础设施情报': 'Infrastructure' };
 const TAG_SOURCE = Object.fromEntries(Object.entries(TAG_EN).map(([source, english]) => [english, source]));
 
+const isAdminUser = (user) => ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(user?.siteRole) || user?.role === 'admin';
+const isBlocked = (listing, user) => !!user && !isAdminUser(user) && (listing.blockedUserIds || []).includes(user.id);
+const normalizeBlockedUsers = (owner, input) => [...new Set(Array.isArray(input) ? input.map(String) : [])]
+  .filter((id) => id !== owner.id && db.users.some((user) => user.id === id && !user.banned))
+  .slice(0, 30);
+
+const words = (value) => String(value || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().split(/\s+/).filter((word) => word.length > 1);
+function contentSimilarity(left, right) {
+  const a = words(left);
+  const b = words(right);
+  if (!a.length || !b.length) return 0;
+  const compactA = a.join(' ');
+  const compactB = b.join(' ');
+  if (Math.min(compactA.length, compactB.length) >= 40 && (compactA.includes(compactB) || compactB.includes(compactA))) return 1;
+  const shingles = (items) => new Set(items.length < 3 ? items : items.slice(0, -2).map((_, index) => items.slice(index, index + 3).join(' ')));
+  const setA = shingles(a);
+  const setB = shingles(b);
+  let shared = 0;
+  for (const item of setA) if (setB.has(item)) shared += 1;
+  return shared / Math.max(1, Math.min(setA.size, setB.size));
+}
+
+function reviewPossibleResale(user, offer) {
+  const sources = db.purchases.filter((purchase) => purchase.buyerUserId === user.id).flatMap((purchase) => {
+    const source = db.offers.find((item) => item.id === purchase.offerId);
+    if (!source || source.id === offer.id) return [];
+    return source.tiers.filter((tier) => purchase.tierId === '*' || tier.id === purchase.tierId).map((tier) => ({ source, tier }));
+  });
+  let strongest = null;
+  for (const offeredTier of offer.tiers) for (const purchased of sources) {
+    const score = contentSimilarity(offeredTier.content, purchased.tier.content);
+    if (!strongest || score > strongest.score) strongest = { score, ...purchased };
+  }
+  if (!strongest || strongest.score < 0.72) return;
+  db.auditLog.unshift({
+    id: uid('rsa'), action: 'possible_information_resale', actorUserId: user.id,
+    targetId: offer.id, sourceOfferId: strongest.source.id,
+    similarity: Number(strongest.score.toFixed(3)), createdAt: now(),
+  });
+  notify(user.id, {
+    type: 'resale_review',
+    title: 'Your listing entered resale review',
+    message: 'This listing substantially overlaps information previously purchased by this account. Administrators have been alerted; no automatic penalty was applied.',
+    href: `/tavern/offers/${offer.id}`,
+  });
+  for (const admin of db.users.filter(isAdminUser)) {
+    if (admin.id === user.id) continue;
+    notify(admin.id, {
+      type: 'resale_review',
+      title: 'Possible information resale detected',
+      message: `${user.displayName || user.username} posted content that substantially overlaps a purchase made by one of the account’s masks (${Math.round(strongest.score * 100)}% similarity).`,
+      href: `/tavern/offers/${offer.id}`,
+    });
+  }
+}
+
 /* -------------------------------- 标签 -------------------------------- */
 
 tavernRouter.get(
@@ -163,7 +219,7 @@ tavernRouter.get(
   '/offers',
   wrap((req, res) => {
     const { q, tag, evidence, sort = 'new' } = req.query;
-    let items = db.offers.filter((o) => !o.hiddenByAdmin && o.status !== 'withdrawn');
+    let items = db.offers.filter((o) => !o.hiddenByAdmin && o.status !== 'withdrawn' && !isBlocked(o, req.user));
     if (q) items = items.filter((o) => {
       const item = publicOffer(o, req.user);
       return matchText(q, item.title, item.summary, ...(item.tags || []), item.seller.alias);
@@ -187,7 +243,7 @@ tavernRouter.get(
   '/offers/:id',
   wrap((req, res) => {
     const o = db.offers.find((x) => x.id === req.params.id);
-    if (!o || o.hiddenByAdmin) throw missing('这条情报已经从墙上撕走了');
+    if (!o || o.hiddenByAdmin || isBlocked(o, req.user)) throw missing('This information is not available.');
     o.views = (o.views ?? 0) + 1;
     save();
     res.json({ offer: publicOffer(o, req.user) });
@@ -233,12 +289,21 @@ tavernRouter.post(
       summary: String(req.body.summary || '').slice(0, 200),
       tags,
       tiers: tiers.sort((a, b) => a.price - b.price),
+      blockedUserIds: normalizeBlockedUsers(req.user, req.body.blockedUserIds),
+      exclusive: !!req.body.exclusive,
+      exclusivePrice: null,
       status: 'open',
       views: 0,
       hiddenByAdmin: false,
       createdAt: now(),
     };
+    if (offer.exclusive) {
+      const price = Math.round(Number(req.body.exclusivePrice));
+      if (!Number.isFinite(price) || price < 1) throw bad('Exclusive buyout price must be at least 1 TMT.');
+      offer.exclusivePrice = price;
+    }
     db.offers.unshift(offer);
+    reviewPossibleResale(req.user, offer);
     save();
     res.json({ offer: publicOffer(offer, req.user) });
   })
@@ -250,23 +315,29 @@ tavernRouter.post(
   wrap((req, res) => {
     const offer = db.offers.find((x) => x.id === req.params.id);
     if (!offer || offer.hiddenByAdmin || offer.status !== 'open') throw missing('该情报当前不可交易');
-    const tier = offer.tiers.find((t) => t.id === req.body.tierId);
-    if (!tier) throw missing('没有这个档位');
+    if (isBlocked(offer, req.user)) throw new HttpError(403, 'The seller has excluded this account from the listing.');
+    const buyout = !!req.body.buyout;
+    if (!!offer.exclusive !== buyout) throw bad(offer.exclusive ? 'This listing is available only as an exclusive buyout.' : 'This listing does not offer an exclusive buyout.');
+    const tier = buyout ? null : offer.tiers.find((t) => t.id === req.body.tierId);
+    if (!buyout && !tier) throw missing('This access tier does not exist.');
 
     const seller = userOfProfile(offer.profileId);
     if (!seller) throw bad('卖方身份已失效');
     if (seller.id === req.user.id) throw bad('不能买自己的情报');
-    if (hasUnlocked(req.user.id, offer.id, tier.id)) throw bad('你已经解锁过这一档了');
+    if (!buyout && hasUnlocked(req.user.id, offer.id, tier.id)) throw bad('You have already unlocked this tier.');
 
     // 买家也用马甲露面，保证卖家看不到真实身份
     const buyerProfile = req.body.buyerProfileId ? ownProfile(req.user, req.body.buyerProfileId) : null;
+    const price = buyout ? offer.exclusivePrice : tier.price;
+    const tierId = buyout ? '*' : tier.id;
+    const tierName = buyout ? 'Exclusive buyout' : tier.name;
 
-    debit(req.user, tier.price, 'offer_purchase', `解锁情报《${offer.title}》- ${tier.name}`, {
+    debit(req.user, price, 'offer_purchase', `Purchased “${offer.title}” — ${tierName}`, {
       type: 'offer',
       id: offer.id,
       profileId: buyerProfile?.id,
     });
-    credit(seller, tier.price, 'offer_income', `售出情报《${offer.title}》- ${tier.name}`, {
+    credit(seller, price, 'offer_income', `Sold “${offer.title}” — ${tierName}`, {
       type: 'offer',
       id: offer.id,
       profileId: offer.profileId,
@@ -275,15 +346,26 @@ tavernRouter.post(
     db.purchases.unshift({
       id: uid('buy'),
       offerId: offer.id,
-      tierId: tier.id,
+      tierId,
       buyerUserId: req.user.id,
       buyerProfileId: buyerProfile?.id || null,
       sellerProfileId: offer.profileId,
-      amount: tier.price,
+      amount: price,
       createdAt: now(),
     });
+    if (buyout) {
+      offer.status = 'sold';
+      offer.soldToUserId = req.user.id;
+      offer.soldAt = now();
+    }
     const sellerProfile = profileById(offer.profileId);
     if (sellerProfile) sellerProfile.dealsClosed = (sellerProfile.dealsClosed ?? 0) + 1;
+    notify(seller.id, {
+      type: 'offer_purchase',
+      title: buyout ? 'Exclusive buyout completed' : 'Information purchased',
+      message: buyout ? `Your listing “${offer.title}” was bought out for ${price} TMT and is now closed.` : `A buyer unlocked “${offer.title}” for ${price} TMT.`,
+      href: `/tavern/offers/${offer.id}`,
+    });
     save();
 
     res.json({ offer: publicOffer(offer, req.user) });
@@ -309,7 +391,7 @@ tavernRouter.get(
   '/requests',
   wrap((req, res) => {
     const { q, tag, status } = req.query;
-    let items = db.requests.filter((r) => !r.hiddenByAdmin);
+    let items = db.requests.filter((r) => !r.hiddenByAdmin && !isBlocked(r, req.user));
     if (q) items = items.filter((r) => {
       const item = publicRequest(r, req.user);
       return matchText(q, item.title, item.brief, ...(item.tags || []), item.buyer.alias);
@@ -326,7 +408,7 @@ tavernRouter.get(
   '/requests/:id',
   wrap((req, res) => {
     const r = db.requests.find((x) => x.id === req.params.id);
-    if (!r || r.hiddenByAdmin) throw missing('该委托已撤下');
+    if (!r || r.hiddenByAdmin || isBlocked(r, req.user)) throw missing('This request is not available.');
     res.json({ request: publicRequest(r, req.user) });
   })
 );
@@ -368,6 +450,7 @@ tavernRouter.post(
       title,
       brief: String(req.body.brief || '').slice(0, 600),
       tags,
+      blockedUserIds: normalizeBlockedUsers(req.user, req.body.blockedUserIds),
       tiers,
       deposit,
       depositRemaining: deposit,
@@ -389,6 +472,7 @@ tavernRouter.post(
   wrap((req, res) => {
     const request = db.requests.find((x) => x.id === req.params.id);
     if (!request || request.hiddenByAdmin) throw missing('该委托不存在');
+    if (isBlocked(request, req.user)) throw new HttpError(403, 'The requester has excluded this account from the request.');
     if (request.status !== 'open') throw bad('该委托已关闭');
     const profile = ownProfile(req.user, req.body.profileId);
     if (userOfProfile(request.profileId)?.id === req.user.id) throw bad('不能应征自己发布的委托');

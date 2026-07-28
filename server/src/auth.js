@@ -61,9 +61,14 @@ export function requireAdmin(req, _res, next) {
 }
 
 export function enforceReadOnly(req, _res, next) {
-  const readOnly = ['read_only_admin', 'event_staff'].includes(req.user?.siteRole);
+  const readOnlyAdmin = ['read_only_admin', 'event_staff'].includes(req.user?.siteRole);
+  const readOnlyUser = req.user?.siteRole === 'read_only_user';
   const officialTransfer = req.method === 'POST' && req.path === '/api/wallet/official-transfer';
-  if (readOnly && !officialTransfer && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+  const tomatoThrow = req.method === 'POST' && req.path === '/api/tomatoes';
+  if (readOnlyUser && !tomatoThrow && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next(new HttpError(403, 'This read-only account may browse and throw tomatoes, but cannot perform other actions or TMT transactions.'));
+  }
+  if (readOnlyAdmin && !officialTransfer && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next(new HttpError(403, 'Event Staff access is read-only.'));
   }
   next();

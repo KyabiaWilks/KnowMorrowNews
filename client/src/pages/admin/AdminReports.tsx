@@ -10,7 +10,8 @@ type Report = {
   status: 'pending' | 'upheld' | 'dismissed'; createdAt: string;
   evidence: { id: string; name: string; url: string }[];
   reporter: { alias: string; sigil: string };
-  accused: { alias: string; username: string; alts: string[] } | null;
+  accused: { alias: string; identityDisclosed: boolean; username: string | null; alts: string[] } | null;
+  judgments: { id: string; verdict: string; severity: string; penalties: string[]; summary: string; submittedBy: string; submittedAt: string }[];
   arbitration: { summary: string; executed: string[]; decidedBy: string; decidedAt: string } | null;
 };
 type Penalty = { id: string; label: string };
@@ -30,12 +31,12 @@ export default function AdminReports() {
   useEffect(() => { void load(); }, [filter]);
   useEffect(() => { void get<{ penalties: Penalty[] }>('/admin/penalties').then((result) => setPenalties(result.penalties)); }, []);
 
-  const decide = async () => {
+  const submit = async (final: boolean) => {
     if (!target) return;
     setBusy(true);
     try {
-      await post(`/admin/reports/${target.id}/arbitrate`, form);
-      toast.push(t('Decision executed.', '裁决已执行。'), 'good');
+      await post(`/admin/reports/${target.id}/${final ? 'arbitrate' : 'judgments'}`, form);
+      toast.push(final ? t('Final decision executed.', '最终裁决已执行。') : t('Independent judgment submitted.', '独立判断已提交。'), 'good');
       setTarget(null); setForm(initialForm); await load();
     } catch (error) {
       toast.push((error as Error).message, 'bad');
@@ -55,13 +56,15 @@ export default function AdminReports() {
       <div className="soft">{report.detail || t('(No additional details supplied.)', '（举报人未补充说明。）')}</div>
       {report.evidence.length > 0 && <div className="row">{report.evidence.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noreferrer">📎 {item.name}</a>)}</div>}
       <div className="divider" />
-      <div className="row row--between"><span className="muted">{t('Reporter', '举报人')}: {report.reporter.sigil} {report.reporter.alias}</span>{report.accused && <span className="muted">{t('Reported account', '被举报账号')}: <strong>{report.accused.alias}</strong> · <code>{report.accused.username}</code> · {t('Masks', '马甲')}: {report.accused.alts.join(', ') || '—'}</span>}</div>
+      <div className="row row--between"><span className="muted">{t('Reporter', '举报人')}: {report.reporter.sigil} {report.reporter.alias}</span>{report.accused && <span className="muted">{t('Reported mask', '被举报马甲')}: <strong>{report.accused.alias}</strong>{report.accused.identityDisclosed ? <> · <code>{report.accused.username}</code> · {report.accused.alts.join(', ')}</> : <> · {t('Account identity remains private', '账号身份仍保密')}</>}</span>}</div>
+      {report.judgments.length > 0 && <div className="stack"><div className="eyebrow">{t(`INDEPENDENT JUDGMENTS (${report.judgments.length})`, `独立判断（${report.judgments.length}）`)}</div>{report.judgments.map((judgment) => <div className="soft" key={judgment.id}><strong>{judgment.submittedBy}</strong> · {judgment.verdict} · {judgment.severity}{judgment.penalties.length ? ` · ${judgment.penalties.join(', ')}` : ''}<div>{judgment.summary || t('No summary supplied.', '未填写摘要。')}</div></div>)}</div>}
       {report.arbitration ? <div className="card card--pad" style={{ background: 'var(--blue-50)' }}><strong>{report.arbitration.summary}</strong><div className="muted">{report.arbitration.executed.join(', ') || t('No additional action.', '未执行额外处置。')}</div><div className="muted">{t('Decided by', '裁决人')} {report.arbitration.decidedBy} · {fmtTime(report.arbitration.decidedAt)}</div></div>
         : <div><button className="btn btn--primary btn--sm" onClick={() => setTarget(report)}>{t('Open arbitration', '进入仲裁')}</button></div>}
     </article>)}
     <Modal open={!!target} onClose={() => setTarget(null)} wide title={t('Arbitration decision', '仲裁裁决')} subtitle={target ? `${target.targetLabel} · ${target.reason}` : ''}
-      footer={<><button className="btn" onClick={() => setTarget(null)}>{t('Cancel', '取消')}</button><button className="btn btn--primary" onClick={decide} disabled={busy}>{busy ? t('Executing…', '执行中…') : t('Decide and execute', '作出裁决并执行')}</button></>}>
+      footer={<><button className="btn" onClick={() => setTarget(null)}>{t('Cancel', '取消')}</button><button className="btn" onClick={() => submit(false)} disabled={busy}>{t('Submit my judgment', '提交我的判断')}</button><button className="btn btn--primary" onClick={() => submit(true)} disabled={busy || (target?.judgments.length || 0) < 2}>{busy ? t('Executing…', '执行中…') : t('Finalize and execute penalties', '最终敲定并执行处罚')}</button></>}>
       <div className="stack">
+        <div className="notice-banner">{t('Stage 1: administrators submit independent judgments. Stage 2 unlocks after at least two administrators have contributed; the finalizer then confirms and executes the penalty.', '第一阶段由多名管理员分别提交判断；至少两名管理员提交后，第二阶段才可由最终裁决人确认并执行处罚。')}</div>
         <div className="field"><label>{t('Verdict', '裁决结论')}</label><div className="row"><button className={`chip ${form.verdict === 'upheld' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'upheld' })}>{t('Uphold report', '举报成立')}</button><button className={`chip ${form.verdict === 'dismissed' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'dismissed' })}>{t('Dismiss report', '举报不成立')}</button></div></div>
         {form.verdict === 'upheld' && <>
           <div className="field"><label>{t('Severity', '严重程度')}</label><div className="row">{[['minor', t('Minor', '轻微')], ['major', t('Major', '严重')], ['severe', t('Severe', '非常严重')]].map(([id, label]) => <button key={id} className={`chip ${form.severity === id ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, severity: id })}>{label}</button>)}</div></div>

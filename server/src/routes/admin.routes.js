@@ -193,12 +193,16 @@ adminRouter.get(
   '/users',
   wrap((_req, res) => {
     res.json({
-      items: db.users.map((u) => ({
-        ...publicUser(u),
-        frozenFunds: u.frozenFunds ?? 0,
-        banReason: u.banReason || null,
-        profiles: db.profiles.filter((p) => p.userId === u.id).map((p) => ({ id: p.id, alias: p.alias, retired: !!p.retired })),
-      })),
+      items: db.users.map((u) => {
+        const disclosed = db.arbitrations.some((item) => item.disclosure?.subject === u.username);
+        return {
+          ...publicUser(u),
+          frozenFunds: u.frozenFunds ?? 0,
+          banReason: u.banReason || null,
+          identityDisclosed: disclosed,
+          profiles: disclosed ? db.profiles.filter((p) => p.userId === u.id).map((p) => ({ id: p.id, alias: p.alias, retired: !!p.retired })) : [],
+        };
+      }),
     });
   })
 );
@@ -208,7 +212,7 @@ adminRouter.patch(
   wrap((req, res) => {
     const u = db.users.find((x) => x.id === req.params.id);
     if (!u) throw missing('用户不存在');
-    if (req.body.siteRole && ['user', 'journalist', 'admin', 'read_only_admin'].includes(req.body.siteRole)) {
+    if (req.body.siteRole && ['user', 'read_only_user', 'journalist', 'admin', 'read_only_admin'].includes(req.body.siteRole)) {
       u.siteRole = req.body.siteRole;
       u.role = req.body.siteRole === 'admin' ? 'admin' : 'user';
     }
@@ -264,15 +268,27 @@ adminRouter.get(
           reporter: r.reporterProfileId ? publicProfile(r.reporterProfileId) : { alias: '未具名举报', sigil: '✉' },
           // 仲裁需要看到被举报方的真实账号，这是规约里写明的例外
           accused: accused
-            ? {
-                profileId: accused.id,
-                alias: accused.alias,
-                userId: accused.userId,
-                username: db.users.find((u) => u.id === accused.userId)?.username || '?',
-                alts: db.profiles.filter((p) => p.userId === accused.userId).map((p) => p.alias),
-              }
+            ? (() => {
+                const accusedUser = db.users.find((u) => u.id === accused.userId);
+                const disclosed = !!accusedUser && db.arbitrations.some((item) => item.disclosure?.subject === accusedUser.username);
+                return {
+                  alias: accused.alias,
+                  identityDisclosed: disclosed,
+                  username: disclosed ? accusedUser.username : null,
+                  alts: disclosed ? db.profiles.filter((profile) => profile.userId === accused.userId).map((profile) => profile.alias) : [],
+                };
+              })()
             : null,
           arbitration: db.arbitrations.find((a) => a.reportId === r.id) || null,
+          judgments: (db.arbitrationJudgments || []).filter((item) => item.reportId === r.id).map((item) => ({
+            id: item.id,
+            verdict: item.verdict,
+            severity: item.severity,
+            penalties: item.penalties,
+            summary: item.summary,
+            submittedBy: item.submittedBy,
+            submittedAt: item.submittedAt,
+          })),
         };
       });
     res.json({ items, reasons: REPORT_REASONS });
@@ -280,18 +296,40 @@ adminRouter.get(
 );
 
 export const PENALTIES = [
-  { id: 'warn', label: '警告并记录在案' },
-  { id: 'takedown', label: '下架涉事内容' },
-  { id: 'ban_all_alts', label: '封禁该用户的全部马甲账号' },
-  { id: 'freeze_funds', label: '冻结站内财产' },
-  { id: 'compensate', label: '划扣财产弥补客户损失' },
-  { id: 'public_disclosure', label: '公开信息处罚' },
+  { id: 'warn', label: 'Warning on record' },
+  { id: 'takedown', label: 'Remove reported content' },
+  { id: 'ban_all_alts', label: 'Suspend the account and all masks' },
+  { id: 'freeze_funds', label: 'Freeze account funds' },
+  { id: 'compensate', label: 'Compensate the harmed party' },
+  { id: 'public_disclosure', label: 'Public identity disclosure' },
 ];
 
 adminRouter.get(
   '/penalties',
   wrap((_req, res) => res.json({ penalties: PENALTIES }))
 );
+
+adminRouter.post('/reports/:id/judgments', wrap((req, res) => {
+  const report = db.reports.find((item) => item.id === req.params.id);
+  if (!report) throw missing('Report not found.');
+  if (report.status !== 'pending') throw bad('This report already has a final decision.');
+  const verdict = req.body.verdict === 'upheld' ? 'upheld' : 'dismissed';
+  const severity = ['minor', 'major', 'severe'].includes(req.body.severity) ? req.body.severity : 'minor';
+  const penalties = (Array.isArray(req.body.penalties) ? req.body.penalties : []).filter((id) => PENALTIES.some((item) => item.id === id));
+  db.arbitrationJudgments ||= [];
+  const existing = db.arbitrationJudgments.find((item) => item.reportId === report.id && item.adminUserId === req.user.id);
+  const judgment = {
+    id: existing?.id || uid('jdg'), reportId: report.id, adminUserId: req.user.id,
+    submittedBy: req.user.username, verdict, severity, penalties,
+    summary: String(req.body.summary || '').trim().slice(0, 500),
+    submittedAt: now(),
+  };
+  if (existing) Object.assign(existing, judgment);
+  else db.arbitrationJudgments.unshift(judgment);
+  audit(req.user, 'report.judgment', `Submitted an independent judgment for ${report.id}`);
+  save();
+  res.json({ judgment });
+}));
 
 /**
  * 仲裁裁决。按规约可执行：封禁全部马甲、冻结并划扣财产弥补损失，
@@ -303,6 +341,10 @@ adminRouter.post(
     const report = db.reports.find((x) => x.id === req.params.id);
     if (!report) throw missing('举报不存在');
     if (report.status !== 'pending') throw bad('该举报已处理');
+    const judgments = (db.arbitrationJudgments || []).filter((item) => item.reportId === report.id);
+    if (new Set(judgments.map((item) => item.adminUserId)).size < 2) {
+      throw bad('At least two administrators must submit independent judgments before the final decision.');
+    }
 
     const verdict = req.body.verdict === 'upheld' ? 'upheld' : 'dismissed';
     const severity = ['minor', 'major', 'severe'].includes(req.body.severity) ? req.body.severity : 'minor';

@@ -132,8 +132,9 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
   user.discordUsername = profile.username;
   user.discordAvatar = profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=128` : null;
   user.discordRoles = roleNames;
-  user.siteRole = siteRole;
-  user.role = siteRole === 'admin' ? 'admin' : 'user';
+  const effectiveSiteRole = user.siteRole === 'read_only_user' ? 'read_only_user' : siteRole;
+  user.siteRole = effectiveSiteRole;
+  user.role = effectiveSiteRole === 'admin' ? 'admin' : 'user';
   if (siteRole === 'journalist' && !db.journalists.some((item) => item.userId === user.id)) {
     db.journalists.push({
       id: `jnl_${user.id.replace(/^usr_/, '')}`,

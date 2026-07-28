@@ -10,7 +10,7 @@ export type User = {
   createdAt: string;
   wallet: Wallet;
   profileCount: number;
-  siteRole: 'user' | 'journalist' | 'admin' | 'read_only_admin';
+  siteRole: 'user' | 'read_only_user' | 'journalist' | 'admin' | 'read_only_admin';
   readOnly: boolean;
   minecraftId: string | null;
   minecraftUuid: string | null;
@@ -100,6 +100,8 @@ export type Offer = {
   seller: Mask;
   tiers: Tier[];
   status: string;
+  exclusive: boolean;
+  exclusivePrice: number | null;
   views: number;
   createdAt: string;
   isOwner: boolean;

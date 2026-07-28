@@ -100,7 +100,7 @@ export function publicUser(user) {
     avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
     discordId: user.discordId || null,
     siteRole,
-    readOnly: siteRole === 'read_only_admin',
+    readOnly: siteRole === 'read_only_admin' || siteRole === 'read_only_user',
   };
 }
 
@@ -149,7 +149,7 @@ export function publicProfile(profileId) {
 /* --------------------------------- 情报 --------------------------------- */
 
 export function hasUnlocked(userId, offerId, tierId) {
-  return db.purchases.some((x) => x.buyerUserId === userId && x.offerId === offerId && x.tierId === tierId);
+  return db.purchases.some((x) => x.buyerUserId === userId && x.offerId === offerId && (x.tierId === tierId || x.tierId === '*'));
 }
 
 const TAG_EN = { '有详细证据': 'Detailed evidence', '没有详细证据': 'No detailed evidence', '能源': 'Energy', '卫星影像': 'Satellite imagery', '外交': 'Diplomacy', '时效性强': 'Time-sensitive', '基础设施情报': 'Infrastructure', '高风险': 'High risk', '内部人事': 'Internal affairs', '经济': 'Economy' };
@@ -194,6 +194,8 @@ export function publicOffer(offer, viewer, reveal = false) {
     seller: publicProfile(offer.profileId),
     tiers,
     status: offer.status,
+    exclusive: !!offer.exclusive,
+    exclusivePrice: offer.exclusive ? offer.exclusivePrice : null,
     views: offer.views ?? 0,
     createdAt: offer.createdAt,
     isOwner: !!isOwner,

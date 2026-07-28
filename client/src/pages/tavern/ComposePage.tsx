@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { tmt } from '../../lib/format';
 import { TavernNotice } from './TavernNotice';
+import { RecipientSearch, type RecipientMatch } from '../../components/RecipientSearch';
 
 type OfferTier = { name: string; detail: string; price: number; content: string; files: EvidenceFile[] };
 type ReqTier = { name: string; detail: string; price: number };
@@ -39,6 +40,10 @@ export default function ComposePage() {
     { name: 'Evidence', detail: 'At least one independently verifiable file', price: 400 },
   ]);
   const [deposit, setDeposit] = useState(400);
+  const [blocked, setBlocked] = useState<RecipientMatch[]>([]);
+  const [blockedCandidate, setBlockedCandidate] = useState<RecipientMatch | null>(null);
+  const [exclusive, setExclusive] = useState(false);
+  const [exclusivePrice, setExclusivePrice] = useState(500);
 
   const loadTags = () => get<{ tags: Tag[] }>('/tavern/tags').then((r) => setTags(r.tags));
 
@@ -75,6 +80,9 @@ export default function ComposePage() {
         summary,
         tags: common.tags,
         tiers: offerTiers.map((t) => ({ ...t, evidenceIds: t.files.map((f) => f.id) })),
+        blockedUserIds: blocked.map((item) => item.id),
+        exclusive,
+        exclusivePrice,
       });
       toast.push('Posted. The title and tags are public; details are protected by tier.', 'good');
       navigate(`/tavern/offers/${res.offer.id}`);
@@ -100,6 +108,7 @@ export default function ComposePage() {
         tiers: reqTiers,
         deposit,
         deadline: deadline || null,
+        blockedUserIds: blocked.map((item) => item.id),
       });
       toast.push(`Request posted with ${tmt(deposit)} in escrow.`, 'good');
       await refresh();
@@ -173,11 +182,22 @@ export default function ComposePage() {
           <TagPicker tags={tags} value={common.tags} onChange={(next) => setCommon({ ...common, tags: next })} onCreate={createTag} />
         </div>
 
+        <div className="field">
+          <label>Exclude accounts (optional)</label>
+          <div className="hint">Excluded accounts—and every mask attached to them—cannot see or transact with this post. Administrators retain review access.</div>
+          <RecipientSearch value={blockedCandidate} onChange={(recipient) => {
+            if (recipient && !blocked.some((item) => item.id === recipient.id)) setBlocked((items) => [...items, recipient]);
+            setBlockedCandidate(null);
+          }} />
+          {blocked.length > 0 && <div className="row">{blocked.map((item) => <span className="chip" key={item.id}>{item.displayName}<button type="button" aria-label={`Remove ${item.displayName}`} onClick={() => setBlocked((items) => items.filter((entry) => entry.id !== item.id))}>×</button></span>)}</div>}
+        </div>
+
         {kind === 'offer' ? (
-          <div className="field">
-            <label>Public summary (optional)</label>
-            <input className="input" value={summary} maxLength={200} onChange={(e) => setSummary(e.target.value)} placeholder="Explain why it matters without revealing the answer." />
-          </div>
+          <>
+            <div className="field"><label>Public summary (optional)</label><input className="input" value={summary} maxLength={200} onChange={(e) => setSummary(e.target.value)} placeholder="Explain why it matters without revealing the answer." /></div>
+            <label className="row"><input type="checkbox" checked={exclusive} onChange={(event) => setExclusive(event.target.checked)} /><span><strong>Offer an exclusive buyout</strong><span className="hint"> One buyer receives every tier and the listing closes immediately.</span></span></label>
+            {exclusive && <div className="field" style={{ maxWidth: 240 }}><label>Exclusive buyout price (TMT)</label><input className="input" type="number" min={1} value={exclusivePrice} onChange={(event) => setExclusivePrice(Number(event.target.value))} /></div>}
+          </>
         ) : (
           <>
             <div className="field">
