@@ -33,7 +33,7 @@ export default function HomePage() {
       </section>
       <section className="km-submit">
         <div><div className="km-kicker">HOW TO SUBMIT</div><h2>Tell our tomatoes to come ketchup on the latest scoop.</h2></div>
-        <div><p>Photos, witness statements, epic reenactments and dramatic retellings are always appreciated. For confidential details, open a private ticket—our head editor will personally handle your submission with a full NDA.</p><div className="row"><Link to="/tavern/compose" className="btn btn--primary">Submit a story</Link><a href="https://discord.gg/u7ujs2wbXV" className="btn" target="_blank" rel="noreferrer">Open a private ticket</a></div></div>
+        <div><p>Photos, witness statements, epic reenactments and dramatic retellings are always appreciated. For confidential details, open a private ticket—our head editor will personally handle your submission with a full NDA.</p><div className="row"><Link to="/tavern/compose" className="btn btn--primary">Submit a lead</Link><a href="https://discord.gg/u7ujs2wbXV" className="btn" target="_blank" rel="noreferrer">Open a private ticket</a></div></div>
       </section>
       <section className="km-friends" aria-labelledby="friend-links-title">
         <div>

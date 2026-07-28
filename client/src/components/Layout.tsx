@@ -6,10 +6,10 @@ import { NotificationBell } from './NotificationBell';
 
 const NAV = [
   { to: '/', label: 'Front Page', end: true },
-  { to: '/news', label: 'Stories' },
+  { to: '/news', label: 'News' },
   { to: '/journalists', label: 'Contributors' },
   { to: '/tavern', label: 'The Tavern' },
-  { to: '/tavern/desk', label: 'My Desk' },
+  { to: '/desk', label: 'My Desk' },
 ];
 
 function roleLabel(role: string) {

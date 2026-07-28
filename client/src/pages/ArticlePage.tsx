@@ -21,7 +21,7 @@ export default function ArticlePage() {
   const { article, related } = data;
   const tipStory = async () => {
     if (!user) {
-      toast.push('Sign in before tipping a story.', 'bad');
+      toast.push('Sign in before tipping a news article.', 'bad');
       return;
     }
     setTipping(true);
@@ -29,7 +29,7 @@ export default function ArticlePage() {
       const result = await post<{ tomatoTips: number }>(`/news/${article.id}/tip`, { amount: tipAmount });
       setData((current) => current ? { ...current, article: { ...current.article, tomatoTips: result.tomatoTips } } : current);
       await refresh();
-      toast.push(`You tipped this story ${tmt(tipAmount)}.`, 'good');
+      toast.push(`You tipped this news article ${tmt(tipAmount)}.`, 'good');
     } catch (reason) {
       toast.push((reason as Error).message, 'bad');
     } finally {
@@ -49,9 +49,9 @@ export default function ArticlePage() {
         <strong style={{ fontSize: 20 }}>🍅 {article.tomatoTips.toLocaleString('en-US', { maximumFractionDigits: 2 })} TMT</strong>
         <div className="muted">Reward reporting with at least 1 TMT.</div>
         <input className="input" type="number" min={1} max={100000} step={1} value={tipAmount} onChange={(event) => setTipAmount(Math.max(1, Number(event.target.value) || 1))} />
-        <button className="btn btn--primary btn--block" disabled={tipping || user?.readOnly} onClick={tipStory}>{tipping ? 'Sending…' : user ? 'Tip this story' : 'Sign in to tip'}</button>
+        <button className="btn btn--primary btn--block" disabled={tipping || user?.readOnly} onClick={tipStory}>{tipping ? 'Sending…' : user ? 'Tip this news' : 'Sign in to tip'}</button>
       </div>
-      {related.length > 0 && <div className="card card--pad stack"><div className="eyebrow">RELATED STORIES</div>{related.map((item) => <Link key={item.id} to={`/news/${item.id}`} className="stack" style={{ gap: 3 }}><div style={{ fontWeight: 650, fontSize: 14 }}>{item.title}</div><div className="muted">{fmtDate(item.publishedAt)}</div></Link>)}</div>}
+      {related.length > 0 && <div className="card card--pad stack"><div className="eyebrow">RELATED NEWS</div>{related.map((item) => <Link key={item.id} to={`/news/${item.id}`} className="stack" style={{ gap: 3 }}><div style={{ fontWeight: 650, fontSize: 14 }}>{item.title}</div><div className="muted">{fmtDate(item.publishedAt)}</div></Link>)}</div>}
       <div className="card card--pad"><div className="eyebrow">HAVE A LEAD?</div><p className="muted" style={{ marginTop: 8 }}>Bring it to the Tavern. Confidential submissions can be filed under a mask.</p><Link to="/tavern/compose" className="btn btn--sm btn--primary btn--block">Submit a tip</Link></div>
     </aside>
   </div>;

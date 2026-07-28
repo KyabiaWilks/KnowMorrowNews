@@ -23,7 +23,7 @@ export default function JournalistsPage() {
       <div className="stack" style={{ gap: 7, flex: 1 }}><div className="row row--between"><div><div style={{ fontWeight: 760, fontSize: 17 }}>{contributor.name}</div><div className="muted">{contributor.title}</div></div>{contributor.featured && <span className="chip chip--warn">★ Featured</span>}</div>
         <div className="soft" style={{ fontSize: 13.5, fontStyle: 'italic' }}>“{contributor.tagline}”</div>
         <div className="row" style={{ gap: 6 }}>{contributor.beats.map((value) => <span key={value} className="chip">{value}</span>)}</div>
-        <div className="row muted" style={{ gap: 14 }}><span>📰 {contributor.storyCount} stories</span><span>🏆 {contributor.awards} awards</span></div>
+        <div className="row muted" style={{ gap: 14 }}><span>📰 {contributor.storyCount} news articles</span><span>🏆 {contributor.awards} awards</span></div>
       </div>
     </Link>)}</div>}
   </div>;

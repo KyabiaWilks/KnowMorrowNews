@@ -23,12 +23,15 @@ import AdminPage from './pages/admin/AdminPage';
 import GhostPage from './pages/ghost/GhostPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
+import DeskHubPage from './pages/DeskHubPage';
+import NewsDeskPage from './pages/NewsDeskPage';
 
-function RequireAuth({ children, admin }: { children: JSX.Element; admin?: boolean }) {
+function RequireAuth({ children, admin, editorial }: { children: JSX.Element; admin?: boolean; editorial?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (admin && !['admin', 'read_only_admin'].includes(user.siteRole)) return <Navigate to="/" replace />;
+  if (editorial && !['journalist', 'admin', 'read_only_admin'].includes(user.siteRole)) return <Navigate to="/desk" replace />;
   return children;
 }
 
@@ -86,6 +89,8 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
           <Route path="profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+          <Route path="desk" element={<RequireAuth><DeskHubPage /></RequireAuth>} />
+          <Route path="desk/news" element={<RequireAuth editorial><NewsDeskPage /></RequireAuth>} />
           <Route
             path="admin/*"
             element={

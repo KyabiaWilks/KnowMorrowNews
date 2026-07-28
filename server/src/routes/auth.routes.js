@@ -14,6 +14,24 @@ authRouter.post('/register', (_req, res) => {
   res.status(403).json({ error: 'Registration is available through Discord only.' });
 });
 
+authRouter.get('/minecraft-avatar/:uuid', wrap(async (req, res) => {
+  const uuid = String(req.params.uuid || '').replaceAll('-', '');
+  if (!/^[a-f0-9]{32}$/i.test(uuid)) throw bad('Invalid Minecraft UUID.');
+  try {
+    const image = await fetch(`https://crafatar.com/avatars/${uuid}?size=64&overlay`, {
+      headers: { 'user-agent': 'KnowMorrowNews/1.0' },
+    });
+    if (!image.ok) throw new Error(`Avatar provider returned ${image.status}`);
+    res.set('Content-Type', image.headers.get('content-type') || 'image/png');
+    res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    res.send(Buffer.from(await image.arrayBuffer()));
+  } catch {
+    res.set('Content-Type', 'image/svg+xml');
+    res.set('Cache-Control', 'public, max-age=300');
+    res.send('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#6b8e54"/><rect x="12" y="14" width="40" height="38" rx="4" fill="#c99b73"/><rect x="20" y="26" width="7" height="7" fill="#25211d"/><rect x="37" y="26" width="7" height="7" fill="#25211d"/><rect x="25" y="40" width="14" height="4" fill="#7a4f3d"/></svg>');
+  }
+}));
+
 const discordState = () => {
   const expires = Date.now() + 10 * 60 * 1000;
   const nonce = crypto.randomBytes(12).toString('hex');

@@ -45,7 +45,7 @@ export default function NewsPage() {
   const pages = Math.ceil(total / 9);
 
   return <div className="stack" style={{ gap: 20 }}>
-    <div className="page-head"><div><div className="eyebrow">THE LATEST</div><h1 className="page-title">Stories</h1><div className="page-sub">{facets?.total ?? '—'} published stories, fully searchable.</div></div></div>
+    <div className="page-head"><div><div className="eyebrow">THE LATEST</div><h1 className="page-title">News</h1><div className="page-sub">{facets?.total ?? '—'} published articles, fully searchable.</div></div></div>
     <div className="card card--pad stack">
       <div className="row">
         <SearchBox value={q} onChange={setQ} placeholder="Search headlines, summaries, articles and contributors…" />
@@ -59,8 +59,8 @@ export default function NewsPage() {
       </div>
       <div className="row" style={{ gap: 6 }}>{facets?.tags.slice(0, 14).map((value) => <TagChip key={value.label} label={`${value.label} ${value.count}`} active={tag === value.label} onClick={() => setParam('tag', tag === value.label ? '' : value.label)} />)}</div>
     </div>
-    {!items ? <Spinner /> : items.length === 0 ? <Empty title="No stories matched your search" hint="Try another phrase or clear the filters." /> : <>
-      <div className="muted">{total} {total === 1 ? 'story' : 'stories'} found</div>
+    {!items ? <Spinner /> : items.length === 0 ? <Empty title="No news matched your search" hint="Try another phrase or clear the filters." /> : <>
+      <div className="muted">{total} {total === 1 ? 'article' : 'articles'} found</div>
       <div className="grid grid--3">{items.map((article) => <Link key={article.id} to={`/news/${article.id}`} className="card card--hover" style={{ overflow: 'hidden' }}>
         <div className="article-card__cover"><span>{article.section}</span></div>
         <div style={{ padding: 18 }} className="stack"><h3 style={{ fontSize: 17.5 }}>{article.title}</h3><p className="muted" style={{ fontSize: 13.5, margin: 0 }}>{article.summary}</p>
