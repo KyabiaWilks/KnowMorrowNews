@@ -75,6 +75,7 @@ export async function seedDatabase() {
     featured: true,
     readingMinutes: 1,
     views: 0,
+    tomatoTips: 0,
     publishedAt: now(),
   }];
   const transactions = users.map((user) => ({

@@ -1,8 +1,21 @@
 import { Router } from 'express';
 import { db, save } from '../db.js';
-import { matchText, missing, paginate, wrap } from '../util.js';
+import { requireAuth } from '../auth.js';
+import { debit } from '../services.js';
+import { bad, matchText, missing, paginate, wrap } from '../util.js';
 
 export const newsRouter = Router();
+
+const NEWS_SECTIONS = [
+  'Scandals, gossip & drama',
+  'Weddings & memorials',
+  'Festivals & advertisements',
+  'Missing & mysteriously found',
+  'Receipts & reenactments',
+  'Oddities',
+  'Satire & commentary',
+  'Bee gifs',
+];
 
 const NEWS_EN = {
   news_border: { title: 'Forty-Seven Days South of the Snow Line', summary: 'During a communications blackout, a temporary hospital run by three doctors became the only remaining civic order south of the snow line.', section: 'Features', tags: ['Border', 'Humanitarian', 'Exclusive'], dateline: 'Southern Snow Line · Special Correspondent', body: 'The blockade closed completely on its eleventh day.\n\nWhen Lyra Shen arrived, the temporary hospital had one oxygen concentrator powered by a diesel generator and a casualty ledger written in pencil. The 214th name had been crossed out and entered again—a teenager brought in twice in three days.\n\n“We do not lack courage. We lack diesel,” the doctor coordinating supplies said.\n\nKnow Morrow verified 31 of the 47 legible names and confirmed through two independent sources that supply deliveries stopped on day nineteen.' },
@@ -32,6 +45,7 @@ const listItem = (a) => ({
   publishedAt: a.publishedAt,
   readingMinutes: a.readingMinutes,
   views: a.views ?? 0,
+  tomatoTips: a.tomatoTips ?? 0,
   featured: !!a.featured,
 });
 
@@ -52,6 +66,7 @@ newsRouter.get(
     if (author) items = items.filter((a) => (a.authorIds || []).includes(String(author)));
 
     items = items.slice().sort((a, b) => {
+      if (sort === 'tomatoes') return (b.tomatoTips ?? 0) - (a.tomatoTips ?? 0);
       if (sort === 'hot') return (b.views ?? 0) - (a.views ?? 0);
       if (sort === 'old') return a.publishedAt.localeCompare(b.publishedAt);
       return b.publishedAt.localeCompare(a.publishedAt);
@@ -66,7 +81,7 @@ newsRouter.get(
   '/facets',
   wrap((_req, res) => {
     const published = db.news.filter((a) => a.status === 'published');
-    const sections = [...new Set(published.map((a) => englishArticle(a).section))];
+    const sections = [...new Set([...NEWS_SECTIONS, ...published.map((a) => englishArticle(a).section)])];
     const counts = {};
     for (const a of published) for (const t of englishArticle(a).tags || []) counts[t] = (counts[t] || 0) + 1;
     res.json({
@@ -76,6 +91,23 @@ newsRouter.get(
         .map(([label, count]) => ({ label, count })),
       total: published.length,
     });
+  })
+);
+
+newsRouter.post(
+  '/:id/tip',
+  requireAuth,
+  wrap((req, res) => {
+    const article = db.news.find((item) => item.id === req.params.id || item.slug === req.params.id);
+    if (!article || article.status !== 'published') throw missing('This story is not available.');
+    const amount = Math.round(Number(req.body.amount) * 100) / 100;
+    if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
+      throw bad('A story tip must be between 1 and 100,000 TMT.');
+    }
+    debit(req.user, amount, 'news_tip', `Tipped “${article.title}”`, { type: 'news', id: article.id });
+    article.tomatoTips = Math.round(((article.tomatoTips ?? 0) + amount) * 100) / 100;
+    save();
+    res.json({ tomatoTips: article.tomatoTips, wallet: { coins: req.user.coins } });
   })
 );
 

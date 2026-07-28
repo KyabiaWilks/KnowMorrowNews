@@ -1724,10 +1724,13 @@ body { background: var(--paper-dim); }
 .km-section-head > p { color: var(--ink-soft); }
 .km-beat-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); border-left: 1px solid var(--line); }
 .km-beat { min-height: 260px; padding: 24px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); position: relative; }
+.km-beat { color: var(--ink); transition: background .18s, transform .18s; }
+.km-beat:hover { color: var(--ink); background: #fffaf0; transform: translateY(-2px); }
 .km-beat__index { font-size: 10px; letter-spacing: .15em; color: var(--ink-faint); }
 .km-beat__icon { display: block; font-size: 28px; margin: 32px 0 18px; }
 .km-beat h3 { font-family: var(--serif); font-size: 23px; }
 .km-beat p { margin-top: 12px; color: var(--ink-soft); font-size: 14px; }
+.km-beat__enter { display: block; margin-top: 22px; color: var(--blue-500); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .km-submit { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 80px; margin-bottom: 70px; background: #fff4bd; border-top: 3px solid var(--ink); }
 .km-submit p { font-family: var(--serif); font-size: 19px; line-height: 1.6; }
 .km-friends { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 12px 0 82px; }

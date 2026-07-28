@@ -3,12 +3,14 @@ import { HttpError, bad, missing, now, uid, fingerprint } from './util.js';
 
 /* ------------------------------ 钱包 / 账本 ------------------------------ */
 
+const money = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
 export function walletOf(user) {
   return {
-    coins: user.coins ?? 0,
-    escrow: user.escrow ?? 0,
-    frozen: user.frozenFunds ?? 0,
-    available: Math.max(0, (user.coins ?? 0) - (user.frozenFunds ?? 0)),
+    coins: money(user.coins ?? 0),
+    escrow: money(user.escrow ?? 0),
+    frozen: money(user.frozenFunds ?? 0),
+    available: money(Math.max(0, (user.coins ?? 0) - (user.frozenFunds ?? 0))),
   };
 }
 
@@ -29,17 +31,19 @@ export function record(userId, delta, kind, memo, ref = {}) {
 }
 
 export function debit(user, amount, kind, memo, ref) {
+  amount = money(amount);
   const w = walletOf(user);
   if (amount <= 0) throw bad('金额必须大于 0');
   if (w.available < amount) throw bad(`tomato coin 不足（可用 ${w.available}，需要 ${amount}）`);
-  user.coins -= amount;
+  user.coins = money(user.coins - amount);
   record(user.id, -amount, kind, memo, ref);
   save();
 }
 
 export function credit(user, amount, kind, memo, ref) {
+  amount = money(amount);
   if (amount <= 0) throw bad('金额必须大于 0');
-  user.coins = (user.coins ?? 0) + amount;
+  user.coins = money((user.coins ?? 0) + amount);
   record(user.id, amount, kind, memo, ref);
   save();
 }

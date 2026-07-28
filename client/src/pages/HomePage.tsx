@@ -29,7 +29,7 @@ export default function HomePage() {
       </section>
       <section className="km-beats">
         <div className="km-section-head"><div><div className="km-kicker">WHAT WE PRINT</div><h2>No scoop too small.</h2></div><p>Including—but certainly not limited to:</p></div>
-        <div className="km-beat-grid">{beats.map(([icon, title, copy], index) => <article className="km-beat" key={title}><span className="km-beat__index">{String(index + 1).padStart(2, '0')}</span><span className="km-beat__icon">{icon}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
+        <div className="km-beat-grid">{beats.map(([icon, title, copy], index) => <Link className="km-beat" key={title} to={`/news?section=${encodeURIComponent(title)}`}><span className="km-beat__index">{String(index + 1).padStart(2, '0')}</span><span className="km-beat__icon">{icon}</span><h3>{title}</h3><p>{copy}</p><span className="km-beat__enter">Browse section →</span></Link>)}</div>
       </section>
       <section className="km-submit">
         <div><div className="km-kicker">HOW TO SUBMIT</div><h2>Tell our tomatoes to come ketchup on the latest scoop.</h2></div>

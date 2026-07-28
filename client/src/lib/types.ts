@@ -46,6 +46,7 @@ export type NewsItem = {
   publishedAt: string;
   readingMinutes: number;
   views: number;
+  tomatoTips: number;
   featured: boolean;
 };
 
