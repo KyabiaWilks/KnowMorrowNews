@@ -3,249 +3,76 @@ import { get, post } from '../../lib/api';
 import { Empty, Modal, Spinner } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
 import { fmtTime } from '../../lib/format';
+import { useAdminLanguage } from './AdminLanguage';
 
 type Report = {
-  id: string;
-  targetType: string;
-  targetLabel: string;
-  reason: string;
-  detail: string;
-  status: 'pending' | 'upheld' | 'dismissed';
-  createdAt: string;
+  id: string; targetLabel: string; reason: string; detail: string;
+  status: 'pending' | 'upheld' | 'dismissed'; createdAt: string;
   evidence: { id: string; name: string; url: string }[];
   reporter: { alias: string; sigil: string };
-  accused: { profileId: string; alias: string; userId: string; username: string; alts: string[] } | null;
-  arbitration: { summary: string; penalties: string[]; executed: string[]; decidedBy: string; decidedAt: string } | null;
+  accused: { alias: string; username: string; alts: string[] } | null;
+  arbitration: { summary: string; executed: string[]; decidedBy: string; decidedAt: string } | null;
 };
-
 type Penalty = { id: string; label: string };
+const initialForm = { verdict: 'upheld', severity: 'major', penalties: [] as string[], summary: '', notes: '', compensation: 0, freezeAmount: 0, disclosureText: '' };
 
 export default function AdminReports() {
   const toast = useToast();
+  const { t } = useAdminLanguage();
   const [rows, setRows] = useState<Report[] | null>(null);
   const [penalties, setPenalties] = useState<Penalty[]>([]);
   const [filter, setFilter] = useState('pending');
   const [target, setTarget] = useState<Report | null>(null);
-  const [form, setForm] = useState({
-    verdict: 'upheld',
-    severity: 'major',
-    penalties: [] as string[],
-    summary: '',
-    notes: '',
-    compensation: 0,
-    freezeAmount: 0,
-    disclosureText: '',
-  });
+  const [form, setForm] = useState(initialForm);
   const [busy, setBusy] = useState(false);
+  const load = () => get<{ items: Report[] }>(`/admin/reports?status=${filter}`).then((result) => setRows(result.items));
 
-  const load = () => get<{ items: Report[] }>(`/admin/reports?status=${filter}`).then((r) => setRows(r.items));
-
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
-
-  useEffect(() => {
-    void get<{ penalties: Penalty[] }>('/admin/penalties').then((r) => setPenalties(r.penalties));
-  }, []);
-
-  const toggle = (id: string) =>
-    setForm((f) => ({ ...f, penalties: f.penalties.includes(id) ? f.penalties.filter((x) => x !== id) : [...f.penalties, id] }));
+  useEffect(() => { void load(); }, [filter]);
+  useEffect(() => { void get<{ penalties: Penalty[] }>('/admin/penalties').then((result) => setPenalties(result.penalties)); }, []);
 
   const decide = async () => {
     if (!target) return;
     setBusy(true);
     try {
       await post(`/admin/reports/${target.id}/arbitrate`, form);
-      toast.push('裁决已执行', 'good');
-      setTarget(null);
-      setForm({ verdict: 'upheld', severity: 'major', penalties: [], summary: '', notes: '', compensation: 0, freezeAmount: 0, disclosureText: '' });
-      await load();
-    } catch (err) {
-      toast.push((err as Error).message, 'bad');
-    } finally {
-      setBusy(false);
-    }
+      toast.push(t('Decision executed.', '裁决已执行。'), 'good');
+      setTarget(null); setForm(initialForm); await load();
+    } catch (error) {
+      toast.push((error as Error).message, 'bad');
+    } finally { setBusy(false); }
   };
 
   if (!rows) return <Spinner />;
+  const filters = [
+    ['pending', t('Pending', '待处理')], ['upheld', t('Upheld', '已成立')],
+    ['dismissed', t('Dismissed', '未成立')], ['all', t('All', '全部')],
+  ];
 
-  return (
-    <div className="stack">
-      <div className="row row--between">
-        <h2 style={{ fontSize: 20 }}>举报与仲裁</h2>
-        <div className="row" style={{ gap: 4 }}>
-          {[
-            { id: 'pending', label: '待处理' },
-            { id: 'upheld', label: '已成立' },
-            { id: 'dismissed', label: '未成立' },
-            { id: 'all', label: '全部' },
-          ].map((f) => (
-            <button key={f.id} className={`chip ${filter === f.id ? 'chip--on' : ''}`} onClick={() => setFilter(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
+  return <div className="stack">
+    <div className="row row--between"><h2>{t('Reports & arbitration', '举报与仲裁')}</h2><div className="row">{filters.map(([id, label]) => <button key={id} className={`chip ${filter === id ? 'chip--on' : ''}`} onClick={() => setFilter(id)}>{label}</button>)}</div></div>
+    {rows.length === 0 ? <Empty icon="⚖️" title={t('Nothing in this queue', '此列表暂无内容')} /> : rows.map((report) => <article key={report.id} className="card card--pad stack">
+      <div className="row row--between"><div className="row"><span className="chip chip--danger">{report.reason}</span><strong>{report.targetLabel}</strong></div><span className="muted">{fmtTime(report.createdAt)}</span></div>
+      <div className="soft">{report.detail || t('(No additional details supplied.)', '（举报人未补充说明。）')}</div>
+      {report.evidence.length > 0 && <div className="row">{report.evidence.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noreferrer">📎 {item.name}</a>)}</div>}
+      <div className="divider" />
+      <div className="row row--between"><span className="muted">{t('Reporter', '举报人')}: {report.reporter.sigil} {report.reporter.alias}</span>{report.accused && <span className="muted">{t('Reported account', '被举报账号')}: <strong>{report.accused.alias}</strong> · <code>{report.accused.username}</code> · {t('Masks', '马甲')}: {report.accused.alts.join(', ') || '—'}</span>}</div>
+      {report.arbitration ? <div className="card card--pad" style={{ background: 'var(--blue-50)' }}><strong>{report.arbitration.summary}</strong><div className="muted">{report.arbitration.executed.join(', ') || t('No additional action.', '未执行额外处置。')}</div><div className="muted">{t('Decided by', '裁决人')} {report.arbitration.decidedBy} · {fmtTime(report.arbitration.decidedAt)}</div></div>
+        : <div><button className="btn btn--primary btn--sm" onClick={() => setTarget(report)}>{t('Open arbitration', '进入仲裁')}</button></div>}
+    </article>)}
+    <Modal open={!!target} onClose={() => setTarget(null)} wide title={t('Arbitration decision', '仲裁裁决')} subtitle={target ? `${target.targetLabel} · ${target.reason}` : ''}
+      footer={<><button className="btn" onClick={() => setTarget(null)}>{t('Cancel', '取消')}</button><button className="btn btn--primary" onClick={decide} disabled={busy}>{busy ? t('Executing…', '执行中…') : t('Decide and execute', '作出裁决并执行')}</button></>}>
+      <div className="stack">
+        <div className="field"><label>{t('Verdict', '裁决结论')}</label><div className="row"><button className={`chip ${form.verdict === 'upheld' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'upheld' })}>{t('Uphold report', '举报成立')}</button><button className={`chip ${form.verdict === 'dismissed' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'dismissed' })}>{t('Dismiss report', '举报不成立')}</button></div></div>
+        {form.verdict === 'upheld' && <>
+          <div className="field"><label>{t('Severity', '严重程度')}</label><div className="row">{[['minor', t('Minor', '轻微')], ['major', t('Major', '严重')], ['severe', t('Severe', '非常严重')]].map(([id, label]) => <button key={id} className={`chip ${form.severity === id ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, severity: id })}>{label}</button>)}</div></div>
+          <div className="field"><label>{t('Penalties', '执行处置')}</label><div className="row">{penalties.map((penalty) => <button key={penalty.id} className={`chip ${form.penalties.includes(penalty.id) ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, penalties: form.penalties.includes(penalty.id) ? form.penalties.filter((id) => id !== penalty.id) : [...form.penalties, penalty.id] })}>{penalty.label}</button>)}</div></div>
+          {form.penalties.includes('freeze_funds') && <div className="field"><label>{t('Amount to freeze (0 freezes all available funds)', '冻结金额（0 表示全部可用余额）')}</label><input className="input" type="number" min={0} value={form.freezeAmount} onChange={(event) => setForm({ ...form, freezeAmount: Number(event.target.value) })} /></div>}
+          {form.penalties.includes('compensate') && <div className="field"><label>{t('Compensation to reporter (TMT)', '划拨给举报人的赔偿（TMT）')}</label><input className="input" type="number" min={0} value={form.compensation} onChange={(event) => setForm({ ...form, compensation: Number(event.target.value) })} /></div>}
+          {form.penalties.includes('public_disclosure') && <div className="field"><label>{t('Public disclosure text', '公开处置公告')}</label><textarea className="textarea" value={form.disclosureText} onChange={(event) => setForm({ ...form, disclosureText: event.target.value })} /><div className="hint" style={{ color: 'var(--bad)' }}>{t('Public disclosure is the most serious action. Verify the evidence before publishing.', '公开披露是最严厉的处置。发布前请确认相关证据。')}</div></div>}
+        </>}
+        <div className="field"><label>{t('Decision summary (visible to reporter)', '裁决摘要（举报人可见）')}</label><input className="input" value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} /></div>
+        <div className="field"><label>{t('Internal notes (administrators only)', '内部备注（仅管理员可见）')}</label><textarea className="textarea" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} /></div>
       </div>
-
-      {rows.length === 0 ? (
-        <Empty icon="⚖️" title="这一栏是空的" />
-      ) : (
-        rows.map((r) => (
-          <div key={r.id} className="card card--pad stack">
-            <div className="row row--between">
-              <div className="row">
-                <span className="chip chip--danger">{r.reason}</span>
-                <strong>{r.targetLabel}</strong>
-              </div>
-              <span className="muted">{fmtTime(r.createdAt)}</span>
-            </div>
-
-            <div className="soft">{r.detail || '（举报人没有补充说明）'}</div>
-
-            {r.evidence.length > 0 && (
-              <div className="row" style={{ gap: 10 }}>
-                {r.evidence.map((e) => (
-                  <a key={e.id} href={e.url} target="_blank" rel="noreferrer">
-                    📎 {e.name}
-                  </a>
-                ))}
-              </div>
-            )}
-
-            <div className="divider" style={{ margin: '2px 0' }} />
-
-            <div className="row row--between">
-              <div className="muted">
-                举报人：{r.reporter.sigil} {r.reporter.alias}
-              </div>
-              {r.accused && (
-                <div className="muted">
-                  被举报：<strong>{r.accused.alias}</strong> · 真实账号 <code>{r.accused.username}</code> · 名下马甲 {r.accused.alts.join('、')}
-                </div>
-              )}
-            </div>
-
-            {r.arbitration ? (
-              <div className="card card--pad" style={{ background: 'var(--blue-50)' }}>
-                <div style={{ fontWeight: 700 }}>{r.arbitration.summary}</div>
-                <div className="muted" style={{ marginTop: 4 }}>
-                  {r.arbitration.executed.join('；') || '未执行额外处罚'}
-                </div>
-                <div className="muted" style={{ marginTop: 4 }}>
-                  裁决人 {r.arbitration.decidedBy} · {fmtTime(r.arbitration.decidedAt)}
-                </div>
-              </div>
-            ) : (
-              <div className="row">
-                <button className="btn btn--primary btn--sm" onClick={() => setTarget(r)}>
-                  进入仲裁
-                </button>
-              </div>
-            )}
-          </div>
-        ))
-      )}
-
-      <Modal
-        open={!!target}
-        onClose={() => setTarget(null)}
-        wide
-        title="仲裁裁决"
-        subtitle={target ? `${target.targetLabel} · ${target.reason}` : ''}
-        footer={
-          <>
-            <button className="btn" onClick={() => setTarget(null)}>
-              取消
-            </button>
-            <button className="btn btn--primary" onClick={decide} disabled={busy}>
-              {busy ? '执行中…' : '作出裁决并执行'}
-            </button>
-          </>
-        }
-      >
-        <div className="stack">
-          <div className="field">
-            <label>裁决结论</label>
-            <div className="row" style={{ gap: 6 }}>
-              <button className={`chip ${form.verdict === 'upheld' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'upheld' })}>
-                举报成立
-              </button>
-              <button className={`chip ${form.verdict === 'dismissed' ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, verdict: 'dismissed' })}>
-                举报不成立
-              </button>
-            </div>
-          </div>
-
-          {form.verdict === 'upheld' && (
-            <>
-              <div className="field">
-                <label>情节严重程度</label>
-                <div className="row" style={{ gap: 6 }}>
-                  {[
-                    { id: 'minor', label: '轻微' },
-                    { id: 'major', label: '严重' },
-                    { id: 'severe', label: '过于严重' },
-                  ].map((s) => (
-                    <button key={s.id} className={`chip ${form.severity === s.id ? 'chip--on' : ''}`} onClick={() => setForm({ ...form, severity: s.id })}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="field">
-                <label>执行的处罚</label>
-                <div className="row" style={{ gap: 6 }}>
-                  {penalties.map((p) => (
-                    <button key={p.id} className={`chip ${form.penalties.includes(p.id) ? 'chip--on' : ''}`} onClick={() => toggle(p.id)}>
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {form.penalties.includes('freeze_funds') && (
-                <div className="field" style={{ maxWidth: 240 }}>
-                  <label>冻结金额（0 = 冻结全部可动用余额）</label>
-                  <input className="input" type="number" min={0} value={form.freezeAmount} onChange={(e) => setForm({ ...form, freezeAmount: Number(e.target.value) })} />
-                </div>
-              )}
-
-              {form.penalties.includes('compensate') && (
-                <div className="field" style={{ maxWidth: 240 }}>
-                  <label>划扣赔偿举报方的金额 TMT</label>
-                  <input className="input" type="number" min={0} value={form.compensation} onChange={(e) => setForm({ ...form, compensation: Number(e.target.value) })} />
-                </div>
-              )}
-
-              {form.penalties.includes('public_disclosure') && (
-                <div className="field">
-                  <label>公开处罚公告正文</label>
-                  <textarea
-                    className="textarea"
-                    value={form.disclosureText}
-                    onChange={(e) => setForm({ ...form, disclosureText: e.target.value })}
-                    placeholder="留空则使用默认措辞。公告会连同该账号名下全部马甲一并披露。"
-                  />
-                  <div className="hint" style={{ color: 'var(--bad)' }}>
-                    这是最重的一档处罚，一旦发布不可撤回。请确认证据充分。
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="field">
-            <label>裁决摘要（举报人可见）</label>
-            <input className="input" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="例如：查实为重复售卖同一条未经核实的消息。" />
-          </div>
-          <div className="field">
-            <label>内部备注（仅管理台可见）</label>
-            <textarea className="textarea" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-          </div>
-        </div>
-      </Modal>
-    </div>
-  );
+    </Modal>
+  </div>;
 }

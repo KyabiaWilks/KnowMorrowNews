@@ -49,6 +49,10 @@ export default function HomePage() {
             <span>Lordeaux</span>
             <span aria-hidden="true">↗</span>
           </a>
+          <a href="https://koenigsburg.vercel.app/" target="_blank" rel="noopener noreferrer">
+            <span>Königsburg</span>
+            <span aria-hidden="true">↗</span>
+          </a>
         </div>
       </section>
     </div>

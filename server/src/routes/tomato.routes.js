@@ -7,6 +7,8 @@ import { bad, missing, now, uid, wrap, HttpError } from '../util.js';
 
 export const tomatoRouter = Router();
 const SPLATS = ['splat-a', 'splat-b', 'splat-c', 'splat-d'];
+const PRIVATE_PAGES = ['/desk', '/profile', '/masks', '/wallet', '/notifications', '/admin', '/tavern/desk'];
+const isPrivatePage = (page) => PRIVATE_PAGES.some((prefix) => page === prefix || page.startsWith(`${prefix}/`));
 const shape = (tomato) => ({
   id: tomato.id, page: tomato.page, x: tomato.x, y: tomato.y, rot: tomato.rot,
   scale: tomato.scale, splat: tomato.splat, note: tomato.note, alias: tomato.alias,
@@ -15,7 +17,12 @@ const shape = (tomato) => ({
 
 tomatoRouter.get('/', wrap((req, res) => {
   const page = String(req.query.page || '/');
-  const items = db.tomatoes.filter((tomato) => !tomato.hidden && (page === '*' || tomato.page === page))
+  const privatePage = isPrivatePage(page);
+  const items = db.tomatoes.filter((tomato) =>
+    !tomato.hidden
+    && (page === '*' || tomato.page === page)
+    && (!privatePage || (!!req.user && tomato.userId === req.user.id))
+  )
     .slice(0, 400)
     .map((tomato) => ({ ...shape(tomato), mine: !!req.user && tomato.userId === req.user.id }));
   res.json({ items, price: config.tomatoPrice });

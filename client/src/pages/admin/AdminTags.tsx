@@ -3,100 +3,22 @@ import { get, patch, post } from '../../lib/api';
 import type { Tag } from '../../lib/types';
 import { Spinner } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
+import { useAdminLanguage } from './AdminLanguage';
 
 export default function AdminTags() {
+  const { t } = useAdminLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<Tag[] | null>(null);
   const [label, setLabel] = useState('');
-
-  const load = () => get<{ items: Tag[] }>('/admin/tags').then((r) => setRows(r.items));
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  const update = async (id: string, body: Partial<Tag>) => {
-    try {
-      await patch(`/admin/tags/${id}`, body);
-      await load();
-    } catch (err) {
-      toast.push((err as Error).message, 'bad');
-    }
-  };
-
-  const create = async () => {
-    if (!label.trim()) return;
-    try {
-      await post('/tavern/tags', { label: label.trim() });
-      setLabel('');
-      await load();
-      toast.push('标签已添加', 'good');
-    } catch (err) {
-      toast.push((err as Error).message, 'bad');
-    }
-  };
-
+  const load = () => get<{ items: Tag[] }>('/admin/tags').then((result) => setRows(result.items));
+  useEffect(() => { void load(); }, []);
+  const update = async (id: string, body: Partial<Tag>) => { try { await patch(`/admin/tags/${id}`, body); await load(); } catch (error) { toast.push((error as Error).message, 'bad'); } };
+  const create = async () => { if (!label.trim()) return; try { await post('/tavern/tags', { label: label.trim() }); setLabel(''); await load(); toast.push(t('Tag added.', '标签已添加。'), 'good'); } catch (error) { toast.push((error as Error).message, 'bad'); } };
   if (!rows) return <Spinner />;
-
-  return (
-    <div className="stack">
-      <h2 style={{ fontSize: 20 }}>标签（{rows.length}）</h2>
-      <div className="notice-banner">
-        「有详细证据 / 没有详细证据」是系统标签，不可改名、不可归档，每条情报与委托都必须二选一。其余标签任何用户都能新增，你可以在这里改色或归档。
-      </div>
-
-      <div className="card card--pad row">
-        <input className="input" style={{ flex: 1 }} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="新增一个标签…" maxLength={16} />
-        <button className="btn btn--primary" onClick={create}>
-          添加
-        </button>
-      </div>
-
-      <div className="card card--pad">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>标签</th>
-              <th>类型</th>
-              <th>颜色</th>
-              <th>说明</th>
-              <th>状态</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((t) => (
-              <tr key={t.id}>
-                <td>
-                  <span className="chip" style={{ background: `${t.color}1a`, borderColor: `${t.color}55`, color: t.color }}>
-                    {t.label}
-                  </span>
-                </td>
-                <td>{t.kind === 'system' ? '系统' : '自定义'}</td>
-                <td>
-                  <input type="color" value={t.color} onChange={(e) => update(t.id, { color: e.target.value })} style={{ width: 46, height: 26, border: 'none', background: 'none' }} />
-                </td>
-                <td>
-                  <input
-                    className="input"
-                    defaultValue={t.description || ''}
-                    onBlur={(e) => e.target.value !== (t.description || '') && update(t.id, { description: e.target.value })}
-                    placeholder="（无）"
-                  />
-                </td>
-                <td>{t.archived ? <span className="chip chip--danger">已归档</span> : <span className="chip chip--good">启用中</span>}</td>
-                <td>
-                  {t.kind !== 'system' && (
-                    <button className="btn btn--sm" onClick={() => update(t.id, { archived: !t.archived })}>
-                      {t.archived ? '恢复' : '归档'}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  return <div className="stack">
+    <h2>{t(`Tags (${rows.length})`, `标签（${rows.length}）`)}</h2>
+    <div className="notice-banner">{t('Evidence tags are protected system tags. Other tags may be recolored or archived here.', '证据标签是受保护的系统标签。其他标签可以在此修改颜色或归档。')}</div>
+    <div className="card card--pad row"><input className="input" style={{ flex: 1 }} value={label} onChange={(event) => setLabel(event.target.value)} placeholder={t('New tag name', '新标签名称')} maxLength={16} /><button className="btn btn--primary" onClick={create}>{t('Add', '添加')}</button></div>
+    <div className="card card--pad admin-table-scroll"><table className="table"><thead><tr><th>{t('Tag', '标签')}</th><th>{t('Type', '类型')}</th><th>{t('Color', '颜色')}</th><th>{t('Description', '说明')}</th><th>{t('Status', '状态')}</th><th /></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><span className="chip" style={{ background: `${row.color}1a`, borderColor: `${row.color}55`, color: row.color }}>{row.label}</span></td><td>{row.kind === 'system' ? t('System', '系统') : t('Custom', '自定义')}</td><td><input type="color" value={row.color} onChange={(event) => update(row.id, { color: event.target.value })} /></td><td><input className="input" defaultValue={row.description || ''} onBlur={(event) => event.target.value !== (row.description || '') && update(row.id, { description: event.target.value })} placeholder={t('None', '无')} /></td><td>{row.archived ? <span className="chip chip--danger">{t('Archived', '已归档')}</span> : <span className="chip chip--good">{t('Active', '启用中')}</span>}</td><td>{row.kind !== 'system' && <button className="btn btn--sm" onClick={() => update(row.id, { archived: !row.archived })}>{row.archived ? t('Restore', '恢复') : t('Archive', '归档')}</button>}</td></tr>)}</tbody></table></div>
+  </div>;
 }

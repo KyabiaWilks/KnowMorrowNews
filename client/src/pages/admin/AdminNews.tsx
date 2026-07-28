@@ -3,196 +3,39 @@ import { del, get, patch, post } from '../../lib/api';
 import { Modal, Spinner } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
 import { fmtDate } from '../../lib/format';
+import { useAdminLanguage } from './AdminLanguage';
 
-type Row = {
-  id: string;
-  title: string;
-  summary: string;
-  body: string;
-  section: string;
-  tags: string[];
-  dateline: string;
-  authorIds: string[];
-  status: string;
-  featured: boolean;
-  publishedAt: string;
-  views: number;
-};
-
-const blank = (): Partial<Row> => ({ title: '', summary: '', body: '', section: '要闻', tags: [], dateline: '', authorIds: [], status: 'published', featured: false });
+type Row = { id: string; title: string; summary: string; body: string; section: string; tags: string[]; dateline: string; authorIds: string[]; status: string; featured: boolean; publishedAt: string; views: number };
+const blank = (): Partial<Row> => ({ title: '', summary: '', body: '', section: 'News', tags: [], dateline: 'Know Morrow News Desk', authorIds: [], status: 'published', featured: false });
 
 export default function AdminNews() {
+  const { t } = useAdminLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [journalists, setJournalists] = useState<{ id: string; name: string }[]>([]);
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
-
-  const load = () => get<{ items: Row[] }>('/admin/news').then((r) => setRows(r.items));
-
-  useEffect(() => {
-    void load();
-    void get<{ items: { id: string; name: string }[] }>('/admin/journalists').then((r) => setJournalists(r.items));
-  }, []);
-
+  const load = () => get<{ items: Row[] }>('/admin/news').then((result) => setRows(result.items));
+  useEffect(() => { void load(); void get<{ items: { id: string; name: string }[] }>('/admin/journalists').then((result) => setJournalists(result.items)); }, []);
   const save = async () => {
     if (!editing) return;
     const payload = { ...editing, tags: typeof editing.tags === 'string' ? String(editing.tags).split(/[,，\s]+/).filter(Boolean) : editing.tags };
-    try {
-      if (editing.id) await patch(`/admin/news/${editing.id}`, payload);
-      else await post('/admin/news', payload);
-      toast.push('已保存', 'good');
-      setEditing(null);
-      await load();
-    } catch (err) {
-      toast.push((err as Error).message, 'bad');
-    }
+    try { if (editing.id) await patch(`/admin/news/${editing.id}`, payload); else await post('/admin/news', payload); toast.push(t('News saved.', '新闻已保存。'), 'good'); setEditing(null); await load(); } catch (error) { toast.push((error as Error).message, 'bad'); }
   };
-
-  const remove = async (row: Row) => {
-    if (!window.confirm(`删除《${row.title}》？`)) return;
-    await del(`/admin/news/${row.id}`);
-    toast.push('已删除');
-    await load();
-  };
-
+  const remove = async (row: Row) => { if (!window.confirm(t(`Delete “${row.title}”?`, `删除《${row.title}》？`))) return; await del(`/admin/news/${row.id}`); toast.push(t('News deleted.', '新闻已删除。'), 'good'); await load(); };
   if (!rows) return <Spinner />;
-
-  return (
-    <div className="stack">
-      <div className="row row--between">
-        <h2 style={{ fontSize: 20 }}>新闻（{rows.length}）</h2>
-        <button className="btn btn--primary" onClick={() => setEditing(blank())}>
-          ＋ 新建报道
-        </button>
-      </div>
-
-      <div className="card card--pad">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>标题</th>
-              <th>版面</th>
-              <th>记者</th>
-              <th>刊发</th>
-              <th>阅读</th>
-              <th>状态</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td style={{ maxWidth: 320 }}>
-                  <div style={{ fontWeight: 650 }}>{r.title}</div>
-                  <div className="muted">{r.summary.slice(0, 50)}…</div>
-                </td>
-                <td>{r.section}</td>
-                <td className="muted">{r.authorIds.map((id) => journalists.find((j) => j.id === id)?.name).filter(Boolean).join('、') || '—'}</td>
-                <td className="mono">{fmtDate(r.publishedAt)}</td>
-                <td>{r.views}</td>
-                <td>
-                  <span className={`chip ${r.status === 'published' ? 'chip--good' : 'chip--warn'}`}>{r.status === 'published' ? '已刊发' : '草稿'}</span>
-                </td>
-                <td>
-                  <div className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
-                    <button className="btn btn--sm" onClick={() => setEditing(r)}>
-                      编辑
-                    </button>
-                    <button className="btn btn--sm btn--danger" onClick={() => remove(r)}>
-                      删除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <Modal
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        wide
-        title={editing?.id ? '编辑报道' : '新建报道'}
-        footer={
-          <>
-            <button className="btn" onClick={() => setEditing(null)}>
-              取消
-            </button>
-            <button className="btn btn--primary" onClick={save}>
-              保存
-            </button>
-          </>
-        }
-      >
-        {editing && (
-          <div className="stack">
-            <div className="field">
-              <label>标题</label>
-              <input className="input" value={editing.title || ''} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
-            </div>
-            <div className="row">
-              <div className="field" style={{ flex: 1 }}>
-                <label>版面</label>
-                <input className="input" value={editing.section || ''} onChange={(e) => setEditing({ ...editing, section: e.target.value })} />
-              </div>
-              <div className="field" style={{ flex: 1 }}>
-                <label>电头</label>
-                <input className="input" value={editing.dateline || ''} onChange={(e) => setEditing({ ...editing, dateline: e.target.value })} placeholder="本报讯 / 特派记者" />
-              </div>
-              <div className="field" style={{ width: 130 }}>
-                <label>状态</label>
-                <select className="select" value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value })}>
-                  <option value="published">刊发</option>
-                  <option value="draft">草稿</option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label>导语</label>
-              <input className="input" value={editing.summary || ''} onChange={(e) => setEditing({ ...editing, summary: e.target.value })} />
-            </div>
-            <div className="field">
-              <label>标签（逗号分隔）</label>
-              <input
-                className="input"
-                value={Array.isArray(editing.tags) ? editing.tags.join('，') : editing.tags || ''}
-                onChange={(e) => setEditing({ ...editing, tags: e.target.value as unknown as string[] })}
-              />
-            </div>
-            <div className="field">
-              <label>署名记者</label>
-              <div className="row" style={{ gap: 6 }}>
-                {journalists.map((j) => {
-                  const on = (editing.authorIds || []).includes(j.id);
-                  return (
-                    <button
-                      key={j.id}
-                      className={`chip ${on ? 'chip--on' : ''}`}
-                      onClick={() =>
-                        setEditing({
-                          ...editing,
-                          authorIds: on ? (editing.authorIds || []).filter((x) => x !== j.id) : [...(editing.authorIds || []), j.id],
-                        })
-                      }
-                    >
-                      {j.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="field">
-              <label>正文（空行分段）</label>
-              <textarea className="textarea" style={{ minHeight: 240 }} value={editing.body || ''} onChange={(e) => setEditing({ ...editing, body: e.target.value })} />
-            </div>
-            <label className="row" style={{ gap: 8 }}>
-              <input type="checkbox" checked={!!editing.featured} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} />
-              设为头版重点
-            </label>
-          </div>
-        )}
-      </Modal>
-    </div>
-  );
+  return <div className="stack">
+    <div className="row row--between"><h2>{t(`News (${rows.length})`, `新闻（${rows.length}）`)}</h2><button className="btn btn--primary" onClick={() => setEditing(blank())}>＋ {t('Create news', '新建新闻')}</button></div>
+    <div className="card card--pad admin-table-scroll"><table className="table"><thead><tr><th>{t('Headline', '标题')}</th><th>{t('Section', '分区')}</th><th>{t('Contributors', '记者')}</th><th>{t('Published', '发布时间')}</th><th>{t('Views', '阅读')}</th><th>{t('Status', '状态')}</th><th /></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><div className="muted">{row.summary.slice(0, 60)}{row.summary.length > 60 ? '…' : ''}</div></td><td>{row.section}</td><td>{row.authorIds.map((id) => journalists.find((item) => item.id === id)?.name).filter(Boolean).join(', ') || '—'}</td><td>{fmtDate(row.publishedAt)}</td><td>{row.views}</td><td><span className={`chip ${row.status === 'published' ? 'chip--good' : 'chip--warn'}`}>{row.status === 'published' ? t('Published', '已发布') : t('Draft', '草稿')}</span></td><td><div className="row"><button className="btn btn--sm" onClick={() => setEditing(row)}>{t('Edit', '编辑')}</button><button className="btn btn--sm btn--danger" onClick={() => remove(row)}>{t('Delete', '删除')}</button></div></td></tr>)}</tbody></table></div>
+    <Modal open={!!editing} onClose={() => setEditing(null)} wide title={editing?.id ? t('Edit news', '编辑新闻') : t('Create news', '新建新闻')} footer={<><button className="btn" onClick={() => setEditing(null)}>{t('Cancel', '取消')}</button><button className="btn btn--primary" onClick={save}>{t('Save', '保存')}</button></>}>
+      {editing && <div className="stack">
+        <label className="field"><span>{t('Headline', '标题')}</span><input className="input" value={editing.title || ''} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></label>
+        <div className="grid grid--3"><label className="field"><span>{t('Section', '分区')}</span><input className="input" value={editing.section || ''} onChange={(event) => setEditing({ ...editing, section: event.target.value })} /></label><label className="field"><span>{t('Dateline', '电头')}</span><input className="input" value={editing.dateline || ''} onChange={(event) => setEditing({ ...editing, dateline: event.target.value })} /></label><label className="field"><span>{t('Status', '状态')}</span><select className="select" value={editing.status} onChange={(event) => setEditing({ ...editing, status: event.target.value })}><option value="published">{t('Published', '发布')}</option><option value="draft">{t('Draft', '草稿')}</option></select></label></div>
+        <label className="field"><span>{t('Summary', '摘要')}</span><input className="input" value={editing.summary || ''} onChange={(event) => setEditing({ ...editing, summary: event.target.value })} /></label>
+        <label className="field"><span>{t('Tags, comma-separated', '标签，以逗号分隔')}</span><input className="input" value={Array.isArray(editing.tags) ? editing.tags.join(', ') : editing.tags || ''} onChange={(event) => setEditing({ ...editing, tags: event.target.value as unknown as string[] })} /></label>
+        <div className="field"><span>{t('Contributors', '署名记者')}</span><div className="row">{journalists.map((journalist) => { const active = (editing.authorIds || []).includes(journalist.id); return <button key={journalist.id} className={`chip ${active ? 'chip--on' : ''}`} onClick={() => setEditing({ ...editing, authorIds: active ? (editing.authorIds || []).filter((id) => id !== journalist.id) : [...(editing.authorIds || []), journalist.id] })}>{journalist.name}</button>; })}</div></div>
+        <label className="field"><span>{t('Article body', '正文')}</span><textarea className="textarea" style={{ minHeight: 260 }} value={editing.body || ''} onChange={(event) => setEditing({ ...editing, body: event.target.value })} /></label>
+        <label className="row"><input type="checkbox" checked={!!editing.featured} onChange={(event) => setEditing({ ...editing, featured: event.target.checked })} /> {t('Feature on the front page', '设为首页重点')}</label>
+      </div>}
+    </Modal>
+  </div>;
 }

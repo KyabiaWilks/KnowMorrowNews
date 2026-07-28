@@ -35,6 +35,6 @@ export function TomatoToolbar() {
   return <div className="tomato-toolbar">
     {enabled && armed && <div className="tomato-hud"><div>Click anywhere to throw · {price} TMT each</div><div className="tomato-hud__message"><input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a message (optional)" maxLength={60} aria-describedby="tomato-message-limit" /><span id="tomato-message-limit">{note.length}/60</span></div></div>}
     {enabled && <button className={`tomato-fab ${armed ? 'tomato-fab--armed tomato-fab--on' : ''}`} onClick={() => setArmed(!armed)} disabled={!canThrow} title={!user ? 'Sign in with Discord to throw' : user.readOnly ? 'Event Staff access is read-only' : ''}>🍅 {armed ? 'Cancel throw' : 'Throw a tomato'}</button>}
-    <button className={`tomato-fab ${enabled ? 'tomato-fab--on' : ''}`} onClick={toggle}><span aria-hidden="true">🍅</span>{enabled ? `Comments on · ${tomatoes.length}` : 'Comments off'}</button>
+    <button className={`tomato-fab ${enabled ? 'tomato-fab--on' : ''}`} onClick={toggle}><span aria-hidden="true">🍅</span>{enabled ? `Tomatoes on · ${tomatoes.length}` : 'Tomatoes off'}</button>
   </div>;
 }

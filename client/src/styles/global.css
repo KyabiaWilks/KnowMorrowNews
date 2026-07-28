@@ -1734,6 +1734,39 @@ button.chip:hover {
   color: #fff;
 }
 
+.admin-language {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-language button {
+  min-width: 72px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-language button.is-active {
+  background: var(--navy-700);
+  color: #fff;
+}
+
+.admin-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .stat {
   padding: 16px 18px;
 }
