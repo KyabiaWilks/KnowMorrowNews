@@ -22,6 +22,7 @@ export const tavernRouter = Router();
 
 /** 每条情报必须声明证据等级，这两个标签由系统锁定 */
 export const EVIDENCE_TAGS = ['Detailed evidence', 'No detailed evidence'];
+const RESERVED_EVIDENCE_LABELS = [...EVIDENCE_TAGS, 'Detailed Evidenc'];
 const MAX_PROFILES = 6;
 const TAG_EN = { '有详细证据': 'Detailed evidence', '没有详细证据': 'No detailed evidence', '军事': 'Military', '外交': 'Diplomacy', '能源': 'Energy', '内部人事': 'Internal affairs', '卫星影像': 'Satellite imagery', '时效性强': 'Time-sensitive', '高风险': 'High risk', '经济': 'Economy', '基础设施情报': 'Infrastructure' };
 const TAG_SOURCE = {};
@@ -107,7 +108,7 @@ tavernRouter.post(
   wrap((req, res) => {
     const requestedLabel = String(req.body.label || '').trim();
     if (requestedLabel.length < 1) throw bad('Tag name cannot be empty.');
-    if (EVIDENCE_TAGS.some((tag) => tag.toLowerCase() === requestedLabel.toLowerCase())) {
+    if (RESERVED_EVIDENCE_LABELS.some((tag) => tag.toLowerCase() === requestedLabel.toLowerCase())) {
       throw bad('Evidence declarations are protected system tags and cannot be added as additional tags.');
     }
     const label = requestedLabel.slice(0, 16);

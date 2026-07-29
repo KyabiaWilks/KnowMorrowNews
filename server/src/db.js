@@ -45,6 +45,7 @@ function ensureSystemEvidenceTags(state) {
     ['有详细证据', 'Detailed evidence'],
     ['没有详细证据', 'No detailed evidence'],
     ['Detailed evidence', 'Detailed evidence'],
+    ['Detailed Evidenc', 'Detailed evidence'],
     ['No detailed evidence', 'No detailed evidence'],
   ]);
   let changed = false;
