@@ -78,7 +78,7 @@ export function Modal({
   );
 }
 
-const EVIDENCE = { yes: 'Detailed evidence included', no: 'No detailed evidence' };
+const EVIDENCE = { yes: 'Detailed evidence', no: 'No detailed evidence' };
 
 export function TagChip({ label, onClick, active }: { label: string; onClick?: () => void; active?: boolean }) {
   const cls =

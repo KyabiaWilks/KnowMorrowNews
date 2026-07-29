@@ -33,8 +33,8 @@ export function record(userId, delta, kind, memo, ref = {}) {
 export function debit(user, amount, kind, memo, ref) {
   amount = money(amount);
   const w = walletOf(user);
-  if (amount <= 0) throw bad('金额必须大于 0');
-  if (w.available < amount) throw bad(`tomato coin 不足（可用 ${w.available}，需要 ${amount}）`);
+  if (amount <= 0) throw bad('Amount must be greater than 0.');
+  if (w.available < amount) throw bad(`Insufficient TMT balance. Available: ${w.available}; required: ${amount}.`);
   user.coins = money(user.coins - amount);
   record(user.id, -amount, kind, memo, ref);
   save();
@@ -42,7 +42,7 @@ export function debit(user, amount, kind, memo, ref) {
 
 export function credit(user, amount, kind, memo, ref) {
   amount = money(amount);
-  if (amount <= 0) throw bad('金额必须大于 0');
+  if (amount <= 0) throw bad('Amount must be greater than 0.');
   user.coins = money((user.coins ?? 0) + amount);
   record(user.id, amount, kind, memo, ref);
   save();
@@ -51,7 +51,7 @@ export function credit(user, amount, kind, memo, ref) {
 /** 委托保证金：从可用余额移入托管，钱还在自己名下但不可动用 */
 export function lockEscrow(user, amount, ref) {
   const w = walletOf(user);
-  if (w.available < amount) throw bad(`保证金不足（可用 ${w.available}，需要 ${amount}）`);
+  if (w.available < amount) throw bad(`Insufficient balance for escrow. Available: ${w.available}; required: ${amount}.`);
   user.coins -= amount;
   user.escrow = (user.escrow ?? 0) + amount;
   record(user.id, -amount, 'escrow_lock', '委托保证金托管', ref);
@@ -68,7 +68,7 @@ export function releaseEscrow(user, amount, ref, memo = '保证金解冻') {
 }
 
 export function payFromEscrow(payer, payee, amount, ref, memo = '委托结算') {
-  if ((payer.escrow ?? 0) < amount) throw bad('托管中的保证金不足以结算该档位');
+  if ((payer.escrow ?? 0) < amount) throw bad('Escrow does not contain enough funds to settle this reward tier.');
   payer.escrow -= amount;
   record(payer.id, -amount, 'escrow_settle', memo, ref);
   payee.coins = (payee.coins ?? 0) + amount;
@@ -112,9 +112,9 @@ export function profileById(id) {
 
 export function ownProfile(user, profileId) {
   const p = profileById(profileId);
-  if (!p) throw missing('马甲不存在');
-  if (p.userId !== user.id) throw new HttpError(403, '这不是你的马甲');
-  if (p.retired) throw bad('该马甲已停用');
+  if (!p) throw missing('Mask not found.');
+  if (p.userId !== user.id) throw new HttpError(403, 'This mask does not belong to your account.');
+  if (p.retired) throw bad('This mask has been retired.');
   return p;
 }
 

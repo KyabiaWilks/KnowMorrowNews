@@ -28,6 +28,8 @@ export default function ComposePage() {
   const [kind, setKind] = useState<'offer' | 'request'>('offer');
   const [masks, setMasks] = useState<Mask[] | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [evidenceTags, setEvidenceTags] = useState<string[]>(['Detailed evidence', 'No detailed evidence']);
+  const [evidenceLabel, setEvidenceLabel] = useState('');
   const [busy, setBusy] = useState(false);
 
   const [common, setCommon] = useState({ profileId: '', title: '', tags: [] as string[] });
@@ -45,7 +47,10 @@ export default function ComposePage() {
   const [exclusive, setExclusive] = useState(false);
   const [exclusivePrice, setExclusivePrice] = useState(500);
 
-  const loadTags = () => get<{ tags: Tag[] }>('/tavern/tags').then((r) => setTags(r.tags));
+  const loadTags = () => get<{ tags: Tag[]; evidenceTags: string[] }>('/tavern/tags').then((r) => {
+    setTags(r.tags);
+    if (r.evidenceTags?.length === 2) setEvidenceTags(r.evidenceTags);
+  });
 
   useEffect(() => {
     void get<{ profiles: Mask[] }>('/tavern/profiles').then((r) => {
@@ -72,13 +77,14 @@ export default function ComposePage() {
   };
 
   const submitOffer = async () => {
+    if (!evidenceLabel) return toast.push('Choose either “Detailed evidence” or “No detailed evidence” before publishing.', 'bad');
     setBusy(true);
     try {
       const res = await post<{ offer: { id: string } }>('/tavern/offers', {
         profileId: common.profileId,
         title: common.title,
         summary,
-        tags: common.tags,
+        tags: [evidenceLabel, ...common.tags],
         tiers: offerTiers.map((t) => ({ ...t, evidenceIds: t.files.map((f) => f.id) })),
         blockedUserIds: blocked.map((item) => item.id),
         exclusive,
@@ -94,6 +100,10 @@ export default function ComposePage() {
   };
 
   const submitRequest = async () => {
+    if (!evidenceLabel) {
+      toast.push('Choose either “Detailed evidence” or “No detailed evidence” before publishing.', 'bad');
+      return;
+    }
     if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
       toast.push('Enter the deadline as YYYY-MM-DD.', 'bad');
       return;
@@ -104,7 +114,7 @@ export default function ComposePage() {
         profileId: common.profileId,
         title: common.title,
         brief,
-        tags: common.tags,
+        tags: [evidenceLabel, ...common.tags],
         tiers: reqTiers,
         deposit,
         deadline: deadline || null,
@@ -178,8 +188,16 @@ export default function ComposePage() {
         </div>
 
         <div className="field">
-          <label>Tags (public; choose one evidence label)</label>
-          <TagPicker tags={tags} value={common.tags} onChange={(next) => setCommon({ ...common, tags: next })} onCreate={createTag} />
+          <label>Evidence declaration (public, required)</label>
+          <div className="row" style={{ gap: 6 }}>
+            {evidenceTags.map((label) => <button type="button" key={label} className={`chip ${evidenceLabel === label ? 'chip--on' : ''}`} onClick={() => setEvidenceLabel(label)}>{label}</button>)}
+          </div>
+          {!evidenceLabel && <div className="hint">Choose exactly one evidence declaration.</div>}
+        </div>
+
+        <div className="field">
+          <label>Additional tags (public, optional)</label>
+          <TagPicker tags={tags.filter((tag) => !evidenceTags.includes(tag.label))} value={common.tags} onChange={(next) => setCommon({ ...common, tags: next })} onCreate={createTag} />
         </div>
 
         <div className="field">

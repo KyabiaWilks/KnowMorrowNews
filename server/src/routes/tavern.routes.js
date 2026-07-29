@@ -106,10 +106,10 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const label = String(req.body.label || '').trim().slice(0, 16);
-    if (label.length < 1) throw bad('标签不能为空');
+    if (label.length < 1) throw bad('Tag name cannot be empty.');
     const exists = db.tags.find((t) => t.label === label);
     if (exists) {
-      if (exists.archived) throw bad('该标签已被管理员归档');
+      if (exists.archived) throw bad('This tag has been archived by an administrator.');
       return res.json({ tag: exists, existed: true });
     }
     const tag = {
@@ -131,10 +131,10 @@ tavernRouter.post(
 function normalizeTags(input) {
   const list = [...new Set((Array.isArray(input) ? input : []).map((t) => TAG_SOURCE[String(t).trim()] || String(t).trim()).filter(Boolean))];
   const evidence = list.filter((t) => EVIDENCE_TAGS.includes(t));
-  if (evidence.length !== 1) throw bad(`必须且只能选择一个证据标签：${EVIDENCE_TAGS.join(' / ')}`);
+  if (evidence.length !== 1) throw bad('Choose exactly one evidence declaration: Detailed evidence or No detailed evidence.');
   const unknown = list.filter((t) => !db.tags.some((x) => x.label === t && !x.archived));
-  if (unknown.length) throw bad(`存在未登记的标签：${unknown.join('、')}`);
-  if (list.length > 8) throw bad('每条最多 8 个标签');
+  if (unknown.length) throw bad(`Unrecognized tags: ${unknown.map((tag) => TAG_EN[tag] || tag).join(', ')}`);
+  if (list.length > 8) throw bad('A post may have no more than 8 tags.');
   return list;
 }
 
@@ -166,10 +166,10 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const alias = String(req.body.alias || '').trim().slice(0, 20);
-    if (alias.length < 2) throw bad('代号至少 2 个字');
-    if (db.profiles.some((p) => p.alias === alias)) throw bad('这个代号已经有人用了，换一个吧');
+    if (alias.length < 2) throw bad('Mask alias must be at least 2 characters.');
+    if (db.profiles.some((p) => p.alias === alias)) throw bad('That mask alias is already in use.');
     const active = db.profiles.filter((p) => p.userId === req.user.id && !p.retired).length;
-    if (active >= MAX_PROFILES) throw bad(`最多同时持有 ${MAX_PROFILES} 个马甲`);
+    if (active >= MAX_PROFILES) throw bad(`An account may have no more than ${MAX_PROFILES} active masks.`);
 
     const profile = {
       id: uid('prf'),
@@ -256,14 +256,14 @@ tavernRouter.post(
   wrap((req, res) => {
     const profile = ownProfile(req.user, req.body.profileId);
     const title = String(req.body.title || '').trim().slice(0, 80);
-    if (title.length < 4) throw bad('标题至少 4 个字（标题对所有人公开）');
+    if (title.length < 4) throw bad('The public title must be at least 4 characters.');
     const tags = normalizeTags(req.body.tags);
 
     const tiers = (Array.isArray(req.body.tiers) ? req.body.tiers : []).map((t, i) => {
       const price = Math.round(Number(t.price));
-      if (!Number.isFinite(price) || price < 0) throw bad(`第 ${i + 1} 档价格不合法`);
+      if (!Number.isFinite(price) || price < 0) throw bad(`Tier ${i + 1} must have a valid non-negative price.`);
       const content = String(t.content || '').trim();
-      if (content.length < 10) throw bad(`第 ${i + 1} 档的情报正文至少 10 个字`);
+      if (content.length < 10) throw bad(`Protected content in tier ${i + 1} must be at least 10 characters.`);
       const evidenceIds = (Array.isArray(t.evidenceIds) ? t.evidenceIds : []).filter((id) =>
         db.evidence.some((e) => e.id === id && e.uploaderId === req.user.id)
       );
@@ -276,10 +276,10 @@ tavernRouter.post(
         evidenceIds,
       };
     });
-    if (!tiers.length) throw bad('至少需要一个价格档位');
-    if (tiers.length > 4) throw bad('最多 4 个价格档位');
+    if (!tiers.length) throw bad('Add at least one access tier.');
+    if (tiers.length > 4) throw bad('An information listing may have no more than 4 tiers.');
     if (tags.includes(EVIDENCE_TAGS[0]) && !tiers.some((t) => t.evidenceIds.length)) {
-      throw bad('标记为「有详细证据」时，至少要有一个档位附带证据文件');
+      throw bad('A listing marked “Detailed evidence” must attach at least one evidence file to a tier.');
     }
 
     const offer = {
@@ -314,7 +314,7 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const offer = db.offers.find((x) => x.id === req.params.id);
-    if (!offer || offer.hiddenByAdmin || offer.status !== 'open') throw missing('该情报当前不可交易');
+    if (!offer || offer.hiddenByAdmin || offer.status !== 'open') throw missing('This information is not currently available for purchase.');
     if (isBlocked(offer, req.user)) throw new HttpError(403, 'The seller has excluded this account from the listing.');
     const buyout = !!req.body.buyout;
     if (!!offer.exclusive !== buyout) throw bad(offer.exclusive ? 'This listing is available only as an exclusive buyout.' : 'This listing does not offer an exclusive buyout.');
@@ -322,8 +322,8 @@ tavernRouter.post(
     if (!buyout && !tier) throw missing('This access tier does not exist.');
 
     const seller = userOfProfile(offer.profileId);
-    if (!seller) throw bad('卖方身份已失效');
-    if (seller.id === req.user.id) throw bad('不能买自己的情报');
+    if (!seller) throw bad('The seller account is no longer available.');
+    if (seller.id === req.user.id) throw bad('You cannot purchase your own information.');
     if (!buyout && hasUnlocked(req.user.id, offer.id, tier.id)) throw bad('You have already unlocked this tier.');
 
     // 买家也用马甲露面，保证卖家看不到真实身份
@@ -377,8 +377,8 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const offer = db.offers.find((x) => x.id === req.params.id);
-    if (!offer) throw missing('情报不存在');
-    if (userOfProfile(offer.profileId)?.id !== req.user.id) throw new HttpError(403, '这不是你发布的情报');
+    if (!offer) throw missing('Information listing not found.');
+    if (userOfProfile(offer.profileId)?.id !== req.user.id) throw new HttpError(403, 'You can withdraw only your own information listing.');
     offer.status = 'withdrawn';
     save();
     res.json({ ok: true });
@@ -419,12 +419,12 @@ tavernRouter.post(
   wrap((req, res) => {
     const profile = ownProfile(req.user, req.body.profileId);
     const title = String(req.body.title || '').trim().slice(0, 80);
-    if (title.length < 4) throw bad('标题至少 4 个字');
+    if (title.length < 4) throw bad('The public title must be at least 4 characters.');
     const tags = normalizeTags(req.body.tags);
 
     const tiers = (Array.isArray(req.body.tiers) ? req.body.tiers : []).map((t, i) => {
       const price = Math.round(Number(t.price));
-      if (!Number.isFinite(price) || price <= 0) throw bad(`第 ${i + 1} 档赏金不合法`);
+      if (!Number.isFinite(price) || price <= 0) throw bad(`Reward tier ${i + 1} must be greater than 0 TMT.`);
       return {
         id: uid('rt'),
         name: String(t.name || `第 ${i + 1} 档`).slice(0, 24),
@@ -432,14 +432,14 @@ tavernRouter.post(
         price,
       };
     });
-    if (!tiers.length) throw bad('阶梯价格至少要有一档');
-    if (tiers.length > 5) throw bad('阶梯价格最多 5 档');
+    if (!tiers.length) throw bad('Add at least one reward tier.');
+    if (tiers.length > 5) throw bad('A request may have no more than 5 reward tiers.');
     tiers.sort((a, b) => a.price - b.price);
 
     const maxPrice = tiers[tiers.length - 1].price;
     const deposit = Math.round(Number(req.body.deposit));
     if (!Number.isFinite(deposit) || deposit < maxPrice) {
-      throw bad(`保证金不得低于最高档赏金（${maxPrice} TMT），这是委托方不拖欠的凭据`);
+      throw bad(`Escrow must cover the highest reward tier (${maxPrice} TMT).`);
     }
 
     lockEscrow(req.user, deposit, { type: 'request', id: 'pending', profileId: profile.id });
@@ -471,16 +471,16 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const request = db.requests.find((x) => x.id === req.params.id);
-    if (!request || request.hiddenByAdmin) throw missing('该委托不存在');
+    if (!request || request.hiddenByAdmin) throw missing('Request not found.');
     if (isBlocked(request, req.user)) throw new HttpError(403, 'The requester has excluded this account from the request.');
-    if (request.status !== 'open') throw bad('该委托已关闭');
+    if (request.status !== 'open') throw bad('This request is closed.');
     const profile = ownProfile(req.user, req.body.profileId);
-    if (userOfProfile(request.profileId)?.id === req.user.id) throw bad('不能应征自己发布的委托');
+    if (userOfProfile(request.profileId)?.id === req.user.id) throw bad('You cannot submit to your own request.');
 
     const tier = request.tiers.find((t) => t.id === req.body.tierId);
-    if (!tier) throw missing('没有这个赏金档位');
+    if (!tier) throw missing('Reward tier not found.');
     const content = String(req.body.content || '').trim();
-    if (content.length < 10) throw bad('提交内容至少 10 个字');
+    if (content.length < 10) throw bad('Submission content must be at least 10 characters.');
 
     const submission = {
       id: uid('sub'),
@@ -515,11 +515,11 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const request = db.requests.find((x) => x.id === req.params.id);
-    if (!request) throw missing('该委托不存在');
-    if (userOfProfile(request.profileId)?.id !== req.user.id) throw new HttpError(403, '只有委托方能结算');
+    if (!request) throw missing('Request not found.');
+    if (userOfProfile(request.profileId)?.id !== req.user.id) throw new HttpError(403, 'Only the requester can settle submissions.');
     const submission = db.submissions.find((s) => s.id === req.body.submissionId && s.requestId === request.id);
-    if (!submission) throw missing('没有这条应征');
-    if (submission.status !== 'pending') throw bad('这条应征已经处理过了');
+    if (!submission) throw missing('Submission not found.');
+    if (submission.status !== 'pending') throw bad('This submission has already been processed.');
 
     const action = req.body.action === 'accept' ? 'accept' : 'reject';
     if (action === 'reject') {
@@ -538,7 +538,7 @@ tavernRouter.post(
 
     const tier = request.tiers.find((t) => t.id === submission.tierId);
     const supplier = userOfProfile(submission.profileId);
-    if (!supplier) throw bad('对方身份已失效');
+    if (!supplier) throw bad('The supplier account is no longer available.');
     payFromEscrow(req.user, supplier, tier.price, { type: 'request', id: request.id }, `委托《${request.title}》- ${tier.name}`);
     request.depositRemaining -= tier.price;
     submission.status = 'accepted';
@@ -566,11 +566,11 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const request = db.requests.find((x) => x.id === req.params.id);
-    if (!request) throw missing('该委托不存在');
-    if (userOfProfile(request.profileId)?.id !== req.user.id) throw new HttpError(403, '只有委托方能关闭');
-    if (request.status === 'closed') throw bad('已经关闭了');
+    if (!request) throw missing('Request not found.');
+    if (userOfProfile(request.profileId)?.id !== req.user.id) throw new HttpError(403, 'Only the requester can close this request.');
+    if (request.status === 'closed') throw bad('This request is already closed.');
     const pending = db.submissions.filter((s) => s.requestId === request.id && s.status === 'pending');
-    if (pending.length) throw bad(`还有 ${pending.length} 条应征未处理，先结清再关闭`);
+    if (pending.length) throw bad(`${pending.length} submissions are still pending. Process them before closing the request.`);
 
     releaseEscrow(req.user, request.depositRemaining, { type: 'request', id: request.id }, `委托《${request.title}》保证金退回`);
     request.depositRemaining = 0;
@@ -608,11 +608,11 @@ tavernRouter.post(
   requireAuth,
   wrap((req, res) => {
     const targetType = ['offer', 'request', 'submission', 'profile'].includes(req.body.targetType) ? req.body.targetType : null;
-    if (!targetType) throw bad('举报对象类型不合法');
+    if (!targetType) throw bad('Invalid report target type.');
     const pool = { offer: db.offers, request: db.requests, submission: db.submissions, profile: db.profiles }[targetType];
     const target = pool.find((x) => x.id === req.body.targetId);
-    if (!target) throw missing('举报对象不存在');
-    if (!REPORT_REASONS.some((r) => r.id === req.body.reason)) throw bad('请选择举报理由');
+    if (!target) throw missing('Report target not found.');
+    if (!REPORT_REASONS.some((r) => r.id === req.body.reason)) throw bad('Choose a reason for the report.');
 
     const report = {
       id: uid('rpt'),
