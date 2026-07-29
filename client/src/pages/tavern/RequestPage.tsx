@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { get, openProtectedFile, post } from '../../lib/api';
+import { get, post } from '../../lib/api';
 import type { BountyRequest, Mask } from '../../lib/types';
 import { MaskBadge, Modal, Spinner, TagChip } from '../../components/ui';
 import { EvidenceUploader } from './EvidenceUploader';
-import { fmtDate, fmtSize, fromNow, tmt } from '../../lib/format';
+import { fmtDate, fromNow, tmt } from '../../lib/format';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ReportButton } from './ReportButton';
 import { TavernNotice } from './TavernNotice';
 import type { EvidenceFile } from '../../lib/types';
+import { EvidencePreview } from './EvidencePreview';
 
 export default function RequestPage() {
   const { id } = useParams();
@@ -178,11 +179,7 @@ export default function RequestPage() {
 
               {s.evidence.length > 0 && (
                 <div className="row" style={{ gap: 12, marginTop: 10 }}>
-                  {s.evidence.map((f) => (
-                    <button type="button" className="btn btn--ghost btn--sm" key={f.id} onClick={() => void openProtectedFile(f.url, f.name).catch((reason) => toast.push(reason.message, 'bad'))}>
-                      📎 {f.name} <span className="muted">{fmtSize(f.size)}</span>
-                    </button>
-                  ))}
+                  {s.evidence.map((f) => <EvidencePreview key={f.id} file={f} />)}
                 </div>
               )}
               {!s.content && s.evidenceCount > 0 && <div className="muted" style={{ marginTop: 8 }}>{s.evidenceCount} evidence files attached</div>}

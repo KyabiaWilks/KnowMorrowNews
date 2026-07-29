@@ -53,6 +53,16 @@ export const patch = <T = any,>(p: string, body?: unknown) => api<T>(p, { method
 export const del = <T = any,>(p: string, ghost = false) => api<T>(p, { method: 'DELETE', ghost });
 
 export async function openProtectedFile(url: string, filename: string) {
+  const objectUrl = await protectedFileUrl(url);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.target = '_blank';
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+}
+
+export async function protectedFileUrl(url: string) {
   const headers: Record<string, string> = {};
   const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -65,13 +75,7 @@ export async function openProtectedFile(url: string, filename: string) {
     } catch {}
     throw new ApiError(response.status, message);
   }
-  const objectUrl = URL.createObjectURL(await response.blob());
-  const link = document.createElement('a');
-  link.href = objectUrl;
-  link.download = filename;
-  link.target = '_blank';
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  return URL.createObjectURL(await response.blob());
 }
 
 export function qs(params: Record<string, string | number | undefined | null>) {

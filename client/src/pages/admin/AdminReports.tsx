@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { get, openProtectedFile, post } from '../../lib/api';
+import { get, post } from '../../lib/api';
 import { Empty, Modal, Spinner } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
+import { EvidencePreview } from '../tavern/EvidencePreview';
 import { fmtTime } from '../../lib/format';
 import { useAdminLanguage } from './AdminLanguage';
+import type { EvidenceFile } from '../../lib/types';
 
 type Report = {
   id: string; targetLabel: string; reason: string; detail: string;
   status: 'pending' | 'upheld' | 'dismissed'; createdAt: string;
-  evidence: { id: string; name: string; url: string }[];
+  evidence: EvidenceFile[];
   reporter: { alias: string; sigil: string };
   accused: { alias: string; identityDisclosed: boolean; username: string | null; alts: string[] } | null;
   judgments: { id: string; verdict: string; severity: string; penalties: string[]; summary: string; submittedBy: string; submittedAt: string }[];
@@ -54,7 +56,7 @@ export default function AdminReports() {
     {rows.length === 0 ? <Empty icon="⚖️" title={t('Nothing in this queue', '此列表暂无内容')} /> : rows.map((report) => <article key={report.id} className="card card--pad stack">
       <div className="row row--between"><div className="row"><span className="chip chip--danger">{report.reason}</span><strong>{report.targetLabel}</strong></div><span className="muted">{fmtTime(report.createdAt)}</span></div>
       <div className="soft">{report.detail || t('(No additional details supplied.)', '（举报人未补充说明。）')}</div>
-      {report.evidence.length > 0 && <div className="row">{report.evidence.map((item) => <button type="button" className="btn btn--ghost btn--sm" key={item.id} onClick={() => void openProtectedFile(item.url, item.name).catch((reason) => toast.push(reason.message, 'bad'))}>📎 {item.name}</button>)}</div>}
+      {report.evidence.length > 0 && <div className="stack">{report.evidence.map((item) => <EvidencePreview key={item.id} file={item} />)}</div>}
       <div className="divider" />
       <div className="row row--between"><span className="muted">{t('Reporter', '举报人')}: {report.reporter.sigil} {report.reporter.alias}</span>{report.accused && <span className="muted">{t('Reported mask', '被举报马甲')}: <strong>{report.accused.alias}</strong>{report.accused.identityDisclosed ? <> · <code>{report.accused.username}</code> · {report.accused.alts.join(', ')}</> : <> · {t('Account identity remains private', '账号身份仍保密')}</>}</span>}</div>
       {report.judgments.length > 0 && <div className="stack"><div className="eyebrow">{t(`INDEPENDENT JUDGMENTS (${report.judgments.length})`, `独立判断（${report.judgments.length}）`)}</div>{report.judgments.map((judgment) => <div className="soft" key={judgment.id}><strong>{judgment.submittedBy}</strong> · {judgment.verdict} · {judgment.severity}{judgment.penalties.length ? ` · ${judgment.penalties.join(', ')}` : ''}<div>{judgment.summary || t('No summary supplied.', '未填写摘要。')}</div></div>)}</div>}

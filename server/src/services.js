@@ -247,7 +247,16 @@ export function publicRequest(request, viewer, reveal = false) {
 export function evidenceById(id) {
   const e = db.evidence.find((x) => x.id === id);
   if (!e) return null;
-  return { id: e.id, name: e.name, url: `/api/upload/evidence/${e.id}`, mime: e.mime, size: e.size };
+  return {
+    id: e.id,
+    name: e.name,
+    url: e.videoProvider === 'youtube' ? e.sourceUrl : `/api/upload/evidence/${e.id}`,
+    mime: e.mime,
+    size: e.size,
+    sourceUrl: e.sourceUrl || null,
+    videoProvider: e.videoProvider || null,
+    videoId: e.videoId || null,
+  };
 }
 
 /* --------------------------------- 审计 --------------------------------- */

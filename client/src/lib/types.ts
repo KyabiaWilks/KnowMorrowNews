@@ -90,7 +90,16 @@ export type Tier = {
   buyers: number;
 };
 
-export type EvidenceFile = { id: string; name: string; url: string; mime: string; size: number };
+export type EvidenceFile = {
+  id: string;
+  name: string;
+  url: string;
+  mime: string;
+  size: number;
+  sourceUrl?: string | null;
+  videoProvider?: 'youtube' | null;
+  videoId?: string | null;
+};
 
 export type Offer = {
   id: string;
