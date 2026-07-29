@@ -6,6 +6,21 @@ import { Spinner } from '../components/ui';
 import { fmtTime } from '../lib/format';
 import { announceNotificationChange } from '../lib/notificationEvents';
 
+function localPendingReportTime() {
+  const now = new Date();
+  const shanghaiNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  let nextUtc = Date.UTC(shanghaiNow.getUTCFullYear(), shanghaiNow.getUTCMonth(), shanghaiNow.getUTCDate(), -4, 0, 0, 0);
+  if (nextUtc <= now.getTime()) nextUtc += 24 * 60 * 60 * 1000;
+  const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local time';
+  const localTime = new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  }).format(new Date(nextUtc));
+  return `${localTime} (${localZone})`;
+}
+
 export default function NotificationsPage() {
   const [data, setData] = useState<{ items: Notification[]; unread: number } | null>(null);
   const [preferences, setPreferences] = useState<{ purchaseDelivery: string; pendingReportsDelivery: string } | null>(null);
@@ -49,7 +64,7 @@ export default function NotificationsPage() {
       <div><div className="eyebrow">DELIVERY SETTINGS</div><h2>How should Tavern alerts reach you?</h2></div>
       <div className="grid grid--2">
         <label className="field"><span>Seller purchase alerts</span><select className="select" value={preferences.purchaseDelivery} onChange={(event) => void savePreference('purchaseDelivery', event.target.value)}><option value="site_and_discord">Website + Discord DM</option><option value="site">Website only</option><option value="discord">Discord DM only</option><option value="off">Off</option></select><span className="hint">Used for purchase milestones, selected tier alerts, and buyouts. A muted listing sends nothing.</span></label>
-        <label className="field"><span>Unprocessed report reminder</span><select className="select" value={preferences.pendingReportsDelivery} onChange={(event) => void savePreference('pendingReportsDelivery', event.target.value)}><option value="site_and_discord">Website + Discord DM</option><option value="site">Website only</option><option value="discord">Discord DM only</option><option value="off">Off</option></select><span className="hint">Sent once daily at 04:00 GMT+8 only when your requests have pending reports.</span></label>
+        <label className="field"><span>Unprocessed report reminder</span><select className="select" value={preferences.pendingReportsDelivery} onChange={(event) => void savePreference('pendingReportsDelivery', event.target.value)}><option value="site_and_discord">Website + Discord DM</option><option value="site">Website only</option><option value="discord">Discord DM only</option><option value="off">Off</option></select><span className="hint">Sent once daily at {localPendingReportTime()} in your time zone, only when your requests have pending reports. The schedule is fixed at 04:00 GMT+8.</span></label>
       </div>
       <div className="notice-banner">Discord income alerts are limited to three proactive DMs per account per GMT+8 calendar day. Website records and wallet entries are still retained.</div>
     </section>
