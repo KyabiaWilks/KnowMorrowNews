@@ -122,6 +122,7 @@ export type Submission = {
   content: string | null;
   evidence: EvidenceFile[];
   evidenceCount: number;
+  paymentSource: 'escrow' | 'wallet' | null;
 };
 
 export type BountyRequest = {
@@ -131,6 +132,7 @@ export type BountyRequest = {
   tags: string[];
   buyer: Mask;
   deposit: number;
+  depositRemaining?: number;
   tiers: RequestTier[];
   deadline: string | null;
   status: string;

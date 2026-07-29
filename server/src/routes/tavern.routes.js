@@ -585,10 +585,21 @@ tavernRouter.post(
     const tier = request.tiers.find((t) => t.id === submission.tierId);
     const supplier = userOfProfile(submission.profileId);
     if (!supplier) throw bad('The supplier account is no longer available.');
-    payFromEscrow(req.user, supplier, tier.price, { type: 'request', id: request.id }, `Request “${request.title}” — ${tier.name}`);
-    request.depositRemaining -= tier.price;
+    const paymentSource = req.body.paymentSource === 'wallet' ? 'wallet' : 'escrow';
+    if (paymentSource === 'wallet') {
+      const paymentMemo = `Request “${request.title}” — ${tier.name}`;
+      debit(req.user, tier.price, 'request_wallet_settle', paymentMemo, { type: 'request', id: request.id });
+      credit(supplier, tier.price, 'request_income', paymentMemo, { type: 'request', id: request.id });
+    } else {
+      if (request.depositRemaining < tier.price) {
+        throw bad('This request does not have enough remaining escrow for this reward tier. Choose wallet payment instead.');
+      }
+      payFromEscrow(req.user, supplier, tier.price, { type: 'request', id: request.id }, `Request “${request.title}” — ${tier.name}`);
+      request.depositRemaining -= tier.price;
+    }
     submission.status = 'accepted';
     submission.paid = tier.price;
+    submission.paymentSource = paymentSource;
     notify(supplier.id, {
       type: 'submission_update',
       title: 'Tavern submission accepted',

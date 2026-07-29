@@ -22,6 +22,8 @@ export default function RequestPage() {
   const [form, setForm] = useState({ profileId: '', tierId: '', title: '', content: '' });
   const [files, setFiles] = useState<EvidenceFile[]>([]);
   const [busy, setBusy] = useState(false);
+  const [settling, setSettling] = useState<{ submissionId: string; tierName: string; price: number } | null>(null);
+  const [paymentSource, setPaymentSource] = useState<'escrow' | 'wallet'>('escrow');
 
   const load = () =>
     get<{ request: BountyRequest }>(`/tavern/requests/${id}`)
@@ -57,10 +59,11 @@ export default function RequestPage() {
     }
   };
 
-  const settle = async (submissionId: string, action: 'accept' | 'reject') => {
+  const settle = async (submissionId: string, action: 'accept' | 'reject', source?: 'escrow' | 'wallet') => {
     try {
-      const r = await post<{ request: BountyRequest }>(`/tavern/requests/${id}/settle`, { submissionId, action });
+      const r = await post<{ request: BountyRequest }>(`/tavern/requests/${id}/settle`, { submissionId, action, paymentSource: source });
       setRequest(r.request);
+      setSettling(null);
       toast.push(action === 'accept' ? 'Report accepted, paid, and unlocked.' : 'Report declined and recorded.', action === 'accept' ? 'good' : 'info');
       await refresh();
     } catch (err) {
@@ -186,8 +189,11 @@ export default function RequestPage() {
 
               {request.isOwner && s.status === 'pending' && (
                 <div className="row" style={{ marginTop: 12 }}>
-                  <button className="btn btn--primary btn--sm" onClick={() => settle(s.id, 'accept')}>
-                    Accept, pay {tmt(tier?.price ?? 0)}, and unlock
+                  <button className="btn btn--primary btn--sm" onClick={() => {
+                    setPaymentSource('escrow');
+                    setSettling({ submissionId: s.id, tierName: tier?.name || 'Report', price: tier?.price ?? 0 });
+                  }}>
+                    Accept and choose payment
                   </button>
                   <button className="btn btn--danger btn--sm" onClick={() => settle(s.id, 'reject')}>
                     Decline
@@ -199,6 +205,42 @@ export default function RequestPage() {
           );
         })}
       </div>
+
+      <Modal
+        open={!!settling}
+        onClose={() => setSettling(null)}
+        title="Accept and pay for this report"
+        subtitle={settling ? `${settling.tierName} costs ${tmt(settling.price)}. Choose which balance should fund this payment.` : ''}
+        footer={<>
+          <button className="btn" onClick={() => setSettling(null)}>Cancel</button>
+          <button
+            className="btn btn--primary"
+            disabled={!settling || busy || (paymentSource === 'escrow' ? (request.depositRemaining ?? 0) : (user?.wallet.available ?? 0)) < (settling?.price ?? 0)}
+            onClick={async () => {
+              if (!settling) return;
+              setBusy(true);
+              try { await settle(settling.submissionId, 'accept', paymentSource); } finally { setBusy(false); }
+            }}
+          >
+            {busy ? 'Processing…' : `Pay ${settling ? tmt(settling.price) : ''}`}
+          </button>
+        </>}
+      >
+        <div className="stack">
+          <label className="tier" style={{ cursor: 'pointer' }}>
+            <input type="radio" name="payment-source" checked={paymentSource === 'escrow'} onChange={() => setPaymentSource('escrow')} />
+            <div style={{ flex: 1 }}><strong>Request escrow</strong><div className="muted">Remaining: {tmt(request.depositRemaining ?? 0)}</div></div>
+          </label>
+          <label className="tier" style={{ cursor: 'pointer' }}>
+            <input type="radio" name="payment-source" checked={paymentSource === 'wallet'} onChange={() => setPaymentSource('wallet')} />
+            <div style={{ flex: 1 }}><strong>My wallet</strong><div className="muted">Available: {tmt(user?.wallet.available ?? 0)}</div></div>
+          </label>
+          {settling && (paymentSource === 'escrow' ? (request.depositRemaining ?? 0) : (user?.wallet.available ?? 0)) < settling.price && (
+            <div className="error-text">The selected balance does not contain enough TMT. Choose the other payment source or add funds.</div>
+          )}
+          <div className="hint">Wallet payment does not reduce the request escrow. Unused escrow remains reserved until the request is closed.</div>
+        </div>
+      </Modal>
 
       <Modal
         open={open}
