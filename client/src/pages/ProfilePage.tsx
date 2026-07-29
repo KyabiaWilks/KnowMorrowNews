@@ -25,6 +25,24 @@ export default function ProfilePage() {
     }
   };
 
+  const markDeparted = async () => {
+    const confirmation = window.prompt('This is permanent. Your account and every mask will become read-only, and your name will enter the Memorial Hall. Type I HAVE DEPARTED to continue.');
+    if (confirmation !== 'I HAVE DEPARTED') {
+      if (confirmation !== null) toast.push('The confirmation phrase did not match. No changes were made.', 'info');
+      return;
+    }
+    setBusy(true);
+    try {
+      await patch('/auth/me', { departed: true, confirmation });
+      await refresh();
+      toast.push('Your account has entered the Memorial Hall and is now read-only.', 'good');
+    } catch (error) {
+      toast.push((error as Error).message, 'bad');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return <div className="stack" style={{ gap: 20 }}>
     <div className="page-head"><div><div className="eyebrow">ACCOUNT PROFILE</div><h1 className="page-title">{user.displayName}</h1><div className="page-sub">Manage the identities used to recognize you in transfers and Tavern tools.</div></div></div>
     <section className="card card--pad profile-identity">
@@ -44,5 +62,9 @@ export default function ProfilePage() {
       {user.minecraftUuid && <div className="row"><img className="mc-avatar" src={`/api/auth/minecraft-avatar/${user.minecraftUuid}`} alt={`${user.minecraftId || 'Minecraft'} avatar`} /><div><strong>{user.minecraftId}</strong><div className="muted">Verified through Mojang</div></div></div>}
     </section>
     <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Tavern identities.</div></div><Link className="btn" to="/tavern/desk?tab=masks">Manage masks</Link></section>
+    <section className="card card--pad row row--between" style={{ borderColor: 'rgba(130, 104, 88, .55)' }}>
+      <div><div className="eyebrow">MEMORIAL STATUS</div><strong>{user.departedAt ? 'You are remembered in the Memorial Hall' : 'I have departed'}</strong><div className="muted">{user.departedAt ? 'This account is permanently read-only.' : 'Permanently retire every mask, convert this account to read-only, and place your public name in the Contributors Memorial Hall.'}</div></div>
+      {!user.departedAt && <button className="btn btn--danger" disabled={busy} onClick={() => void markDeparted()}>I have departed</button>}
+    </section>
   </div>;
 }

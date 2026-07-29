@@ -33,6 +33,10 @@ export function EvidencePreview({ file }: { file: EvidenceFile }) {
     </div>;
   }
 
+  if (file.externalProvider === 'google_drive') {
+    return <a className="btn btn--ghost btn--sm" href={file.sourceUrl || file.url} target="_blank" rel="noreferrer">Open verified Google Drive file ↗</a>;
+  }
+
   if (file.mime.startsWith('image/')) {
     return objectUrl ? <figure style={{ margin: 0 }}><img src={objectUrl} alt={file.name} style={{ display: 'block', maxWidth: '100%', maxHeight: 720, objectFit: 'contain', borderRadius: 6 }} /><figcaption className="muted" style={{ marginTop: 6 }}>{file.name} · {fmtSize(file.size)}</figcaption></figure> : <div className="muted">Loading image preview…</div>;
   }

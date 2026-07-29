@@ -30,6 +30,28 @@ export function Layout() {
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   useEffect(() => {
+    const trustedHosts = ['knowmorrownews.icu', 'discord.gg', 'discord.com', 'youtube.com', 'youtu.be', 'youtube-nocookie.com', 'drive.google.com', 'docs.google.com', 'sheets.google.com', 'slides.google.com', 'theciveventportal.online', 'lordeaux.app'];
+    const guardExternalLink = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      const anchor = target?.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor || anchor.dataset.externalConfirmed === 'true') return;
+      let url;
+      try { url = new URL(anchor.href, window.location.href); } catch { return; }
+      if (!['http:', 'https:'].includes(url.protocol) || url.origin === window.location.origin) return;
+      const trusted = trustedHosts.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`));
+      if (trusted) return;
+      if (!window.confirm(`You are leaving Know Morrow News for an unverified external website:\n\n${url.hostname}\n\nThe destination has not been validated by Know Morrow. Continue?`)) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else {
+        anchor.dataset.externalConfirmed = 'true';
+      }
+    };
+    document.addEventListener('click', guardExternalLink, true);
+    return () => document.removeEventListener('click', guardExternalLink, true);
+  }, []);
+
+  useEffect(() => {
     if (!mobileOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {

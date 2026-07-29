@@ -59,7 +59,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 15 * 1024 * 1024, files: 6 },
+  limits: { fileSize: 50 * 1024 * 1024, files: 6 },
   fileFilter: (_req, file, cb) => {
     const allowed = new Map([
       ['.jpg', ['image/jpeg']], ['.jpeg', ['image/jpeg']], ['.png', ['image/png']],
@@ -123,37 +123,63 @@ uploadRouter.post(
   })
 );
 
+function parseTrustedShareUrl(rawUrl) {
+  let parsed;
+  try { parsed = new URL(rawUrl); } catch { throw bad('Enter a valid sharing URL.'); }
+  if (parsed.protocol !== 'https:') throw bad('Shared links must use HTTPS.');
+  if (parsed.username || parsed.password || parsed.port) throw bad('This sharing URL contains unsupported credentials or a port.');
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  let videoId = '';
+  if (host === 'youtu.be') videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
+  if (['youtube.com', 'm.youtube.com'].includes(host)) {
+    videoId = parsed.pathname === '/watch'
+      ? parsed.searchParams.get('v') || ''
+      : (/^\/(?:shorts|embed)\/([^/]+)/.exec(parsed.pathname)?.[1] || '');
+  }
+  if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    return { provider: 'youtube', id: videoId, url: `https://www.youtube.com/watch?v=${videoId}`, name: `YouTube video ${videoId}`, mime: 'video/youtube' };
+  }
+  let driveId = '';
+  if (host === 'drive.google.com') {
+    driveId = /^\/file\/d\/([A-Za-z0-9_-]{10,})/.exec(parsed.pathname)?.[1] || parsed.searchParams.get('id') || '';
+  }
+  if (['docs.google.com', 'sheets.google.com', 'slides.google.com'].includes(host)) {
+    driveId = /^\/(?:document|spreadsheets|presentation)\/d\/([A-Za-z0-9_-]{10,})/.exec(parsed.pathname)?.[1] || '';
+  }
+  if (/^[A-Za-z0-9_-]{10,}$/.test(driveId)) {
+    return { provider: 'google_drive', id: driveId, url: `https://drive.google.com/file/d/${driveId}/view`, name: `Google Drive file ${driveId.slice(0, 8)}`, mime: 'application/google-drive' };
+  }
+  throw bad('Only valid YouTube or Google Drive sharing links are accepted here.');
+}
+
 uploadRouter.post(
-  '/evidence/youtube',
+  '/evidence/link',
   requireAuth,
   wrap((req, res) => {
-    const rawUrl = String(req.body.url || '').trim();
-    let parsed;
-    try { parsed = new URL(rawUrl); } catch { throw bad('Enter a valid YouTube URL.'); }
-    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
-    let videoId = '';
-    if (host === 'youtu.be') videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
-    if (['youtube.com', 'm.youtube.com'].includes(host)) {
-      videoId = parsed.pathname === '/watch'
-        ? parsed.searchParams.get('v') || ''
-        : (/^\/(?:shorts|embed)\/([^/]+)/.exec(parsed.pathname)?.[1] || '');
-    }
-    if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw bad('Only valid youtube.com or youtu.be video links are supported.');
+    const trusted = parseTrustedShareUrl(String(req.body.url || '').trim());
     const item = {
       id: uid('evd'),
       uploaderId: req.user.id,
-      name: `YouTube video ${videoId}`,
+      name: trusted.name,
       stored: null,
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-      sourceUrl: `https://www.youtube.com/watch?v=${videoId}`,
-      videoProvider: 'youtube',
-      videoId,
-      mime: 'video/youtube',
+      url: trusted.url,
+      sourceUrl: trusted.url,
+      externalProvider: trusted.provider,
+      videoProvider: trusted.provider === 'youtube' ? 'youtube' : null,
+      videoId: trusted.provider === 'youtube' ? trusted.id : null,
+      mime: trusted.mime,
       size: 0,
       createdAt: now(),
     };
     db.evidence.push(item);
     save();
-    res.json({ file: { id: item.id, name: item.name, url: item.sourceUrl, mime: item.mime, size: 0, sourceUrl: item.sourceUrl, videoProvider: item.videoProvider, videoId } });
+    res.json({ file: { id: item.id, name: item.name, url: item.sourceUrl, mime: item.mime, size: 0, sourceUrl: item.sourceUrl, externalProvider: item.externalProvider, videoProvider: item.videoProvider, videoId: item.videoId } });
   })
 );
+
+uploadRouter.use((error, _req, _res, next) => {
+  if (error?.code === 'LIMIT_FILE_SIZE') {
+    return next(new HttpError(413, 'This file exceeds the 50 MB limit. Share larger files through a verified Google Drive link or upload video to YouTube.'));
+  }
+  next(error);
+});

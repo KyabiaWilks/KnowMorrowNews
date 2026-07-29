@@ -250,6 +250,21 @@ authRouter.patch(
         req.user.minecraftUuid = minecraft.id;
       }
     }
+    if (req.body.departed === true) {
+      if (req.user.departedAt) throw bad('This account is already recorded in the Memorial Hall.');
+      if (String(req.body.confirmation || '') !== 'I HAVE DEPARTED') {
+        throw bad('Type I HAVE DEPARTED to confirm this permanent action.');
+      }
+      req.user.departedAt = now();
+      req.user.roleBeforeDeparture = req.user.siteRole || 'user';
+      req.user.siteRole = 'read_only_user';
+      req.user.role = 'user';
+      for (const profile of db.profiles.filter((item) => item.userId === req.user.id)) profile.retired = true;
+      for (const offer of db.offers) {
+        const profile = db.profiles.find((item) => item.id === offer.profileId);
+        if (profile?.userId === req.user.id && offer.status === 'open') offer.status = 'withdrawn';
+      }
+    }
     save();
     res.json({ user: publicUser(req.user) });
   })

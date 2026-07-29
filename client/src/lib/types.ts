@@ -16,6 +16,7 @@ export type User = {
   minecraftUuid: string | null;
   avatar: string | null;
   discordId: string | null;
+  departedAt: string | null;
 };
 
 export type Mask = {
@@ -99,6 +100,7 @@ export type EvidenceFile = {
   sourceUrl?: string | null;
   videoProvider?: 'youtube' | null;
   videoId?: string | null;
+  externalProvider?: 'youtube' | 'google_drive' | null;
 };
 
 export type Offer = {

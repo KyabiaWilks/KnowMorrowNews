@@ -4,7 +4,7 @@ import type { EvidenceFile } from '../../lib/types';
 import { fmtSize } from '../../lib/format';
 import { useToast } from '../../context/ToastContext';
 
-export function EvidenceUploader({ files, onChange, label = 'Evidence files (optional, up to 6 items, 15 MB per file)' }: { files: EvidenceFile[]; onChange: (next: EvidenceFile[]) => void; label?: string }) {
+export function EvidenceUploader({ files, onChange, label = 'Evidence files (optional, up to 6 items, 50 MB per file)' }: { files: EvidenceFile[]; onChange: (next: EvidenceFile[]) => void; label?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -24,7 +24,7 @@ export function EvidenceUploader({ files, onChange, label = 'Evidence files (opt
     if (!youtubeUrl.trim() || files.length >= 6) return;
     setBusy(true);
     try {
-      const result = await api<{ file: EvidenceFile }>('/upload/evidence/youtube', { method: 'POST', body: { url: youtubeUrl } });
+      const result = await api<{ file: EvidenceFile }>('/upload/evidence/link', { method: 'POST', body: { url: youtubeUrl } });
       onChange([...files, result.file]);
       setYoutubeUrl('');
     } catch (error) { toast.push((error as Error).message, 'bad'); }
@@ -35,10 +35,10 @@ export function EvidenceUploader({ files, onChange, label = 'Evidence files (opt
     <input ref={input} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm,.pdf,.txt" multiple hidden onChange={(event) => upload(event.target.files)} />
     <button type="button" className="btn btn--sm" onClick={() => input.current?.click()} disabled={busy || files.length >= 6}>{busy ? 'Uploading…' : '📎 Choose files'}</button>
     <div className="row" style={{ marginTop: 8 }}>
-      <input className="input" type="url" value={youtubeUrl} placeholder="YouTube video URL" onChange={(event) => setYoutubeUrl(event.target.value)} />
-      <button type="button" className="btn btn--sm" disabled={busy || !youtubeUrl.trim() || files.length >= 6} onClick={() => void addYoutube()}>Add video</button>
+      <input className="input" type="url" value={youtubeUrl} placeholder="YouTube or Google Drive sharing URL" onChange={(event) => setYoutubeUrl(event.target.value)} />
+      <button type="button" className="btn btn--sm" disabled={busy || !youtubeUrl.trim() || files.length >= 6} onClick={() => void addYoutube()}>Add link</button>
     </div>
     {files.length > 0 && <div className="stack" style={{ gap: 4, marginTop: 6 }}>{files.map((file) => <div key={file.id} className="row row--between" style={{ fontSize: 13 }}><span>📎 {file.name} {file.size > 0 && <span className="muted">{fmtSize(file.size)}</span>}</span><button type="button" className="btn btn--ghost btn--sm" onClick={() => onChange(files.filter((item) => item.id !== file.id))}>Remove</button></div>)}</div>}
-    <div className="hint">Allowed: JPG, PNG, WebP, GIF, AVIF, MP4, WebM, PDF, TXT, and YouTube links. Executables and other unsafe file types are rejected.</div>
+    <div className="hint">Maximum 50 MB per file. For larger files, use a valid Google Drive share or YouTube link. Executables, disguised files, and unrecognized sharing links are rejected.</div>
   </div>;
 }

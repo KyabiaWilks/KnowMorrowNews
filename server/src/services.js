@@ -99,6 +99,7 @@ export function publicUser(user) {
     minecraftUuid: user.minecraftUuid || null,
     avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
     discordId: user.discordId || null,
+    departedAt: user.departedAt || null,
     siteRole,
     readOnly: siteRole === 'read_only_admin' || siteRole === 'read_only_user',
   };
@@ -250,12 +251,13 @@ export function evidenceById(id) {
   return {
     id: e.id,
     name: e.name,
-    url: e.videoProvider === 'youtube' ? e.sourceUrl : `/api/upload/evidence/${e.id}`,
+    url: e.externalProvider ? e.sourceUrl : `/api/upload/evidence/${e.id}`,
     mime: e.mime,
     size: e.size,
     sourceUrl: e.sourceUrl || null,
     videoProvider: e.videoProvider || null,
     videoId: e.videoId || null,
+    externalProvider: e.externalProvider || null,
   };
 }
 

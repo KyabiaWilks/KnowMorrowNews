@@ -52,6 +52,20 @@ journalistsRouter.get(
     res.json({
       items: items.sort((a, b) => Number(!!b.featured) - Number(!!a.featured) || a.name.localeCompare(b.name)).map(card),
       beats,
+      honors: {
+        hallOfFame: db.journalists.filter((j) => !j.hidden && j.featured).map(card),
+        friends: db.journalists.filter((j) => !j.hidden && !j.featured).map(card),
+        memorials: db.users
+          .filter((user) => user.departedAt)
+          .sort((a, b) => b.departedAt.localeCompare(a.departedAt))
+          .map((user) => ({
+            id: user.id,
+            name: user.displayName,
+            minecraftId: user.minecraftId || null,
+            avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
+            departedAt: user.departedAt,
+          })),
+      },
     });
   })
 );
