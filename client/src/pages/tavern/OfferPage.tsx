@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { get, post } from '../../lib/api';
+import { get, openProtectedFile, post } from '../../lib/api';
 import type { Mask, Offer, Tier } from '../../lib/types';
 import { MaskBadge, Modal, Spinner, TagChip } from '../../components/ui';
 import { fmtSize, fromNow, tmt } from '../../lib/format';
@@ -28,7 +28,7 @@ export default function OfferPage() {
     <div className="stack"><div className="eyebrow">{offer.exclusive ? 'INCLUDED INFORMATION TIERS' : 'ACCESS TIERS · MORE DETAIL, HIGHER PRICE'}</div>{offer.tiers.map((tier) => <div key={tier.id} className={`tier ${tier.unlocked ? 'tier--unlocked' : 'tier--locked'}`}>
       <div style={{ flex: 1 }}><div className="row row--between"><div><strong style={{ fontSize: 15.5 }}>{tier.name}</strong>{tier.detail && <span className="muted"> · {tier.detail}</span>}</div><div className="row"><span className="muted">{tier.buyers} purchases</span>{tier.evidenceCount > 0 && <span className="chip chip--good">📎 {tier.evidenceCount} evidence files</span>}</div></div>
         <div style={{ marginTop: 10 }}>{tier.unlocked ? <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{tier.content}</div> : <div className="stack" style={{ gap: 5 }}><div className="redacted">This information becomes visible after the tier is unlocked.</div><div className="redacted" style={{ width: '78%' }}>Supporting details remain protected.</div></div>}</div>
-        {tier.unlocked && tier.evidence.length > 0 && <div className="stack" style={{ gap: 5, marginTop: 12 }}><div className="eyebrow">EVIDENCE FILES</div>{tier.evidence.map((file) => <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="row" style={{ gap: 8 }}>📎 {file.name} <span className="muted">{fmtSize(file.size)}</span></a>)}</div>}
+        {tier.unlocked && tier.evidence.length > 0 && <div className="stack" style={{ gap: 5, marginTop: 12 }}><div className="eyebrow">EVIDENCE FILES</div>{tier.evidence.map((file) => <button type="button" key={file.id} className="btn btn--ghost row" style={{ gap: 8 }} onClick={() => void openProtectedFile(file.url, file.name).catch((reason) => toast.push(reason.message, 'bad'))}>📎 {file.name} <span className="muted">{fmtSize(file.size)}</span></button>)}</div>}
       </div>
       <div className="stack" style={{ alignItems: 'flex-end', gap: 8, minWidth: 128 }}><div className="tier__price">{offer.exclusive ? 'Included' : tmt(tier.price)}</div>{tier.unlocked ? <span className="chip chip--good">Unlocked</span> : !offer.exclusive && <button className="btn btn--primary btn--sm" disabled={!user || user.readOnly || offer.isOwner || offer.status !== 'open'} onClick={() => setBuying(tier)}>Unlock this tier</button>}</div>
     </div>)}</div>

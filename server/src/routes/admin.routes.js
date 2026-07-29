@@ -263,7 +263,7 @@ adminRouter.get(
           detail: r.detail,
           status: r.status,
           createdAt: r.createdAt,
-          evidence: (r.evidenceIds || []).map((id) => db.evidence.find((e) => e.id === id)).filter(Boolean).map((e) => ({ id: e.id, name: e.name, url: e.url })),
+          evidence: (r.evidenceIds || []).map((id) => db.evidence.find((e) => e.id === id)).filter(Boolean).map((e) => ({ id: e.id, name: e.name, url: `/api/upload/evidence/${e.id}` })),
           reporter: r.reporterProfileId ? publicProfile(r.reporterProfileId) : { alias: 'Unnamed reporter', sigil: '✉' },
           // 仲裁需要看到被举报方的真实账号，这是规约里写明的例外
           accused: accused

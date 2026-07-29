@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { get, post } from '../../lib/api';
+import { get, openProtectedFile, post } from '../../lib/api';
 import type { BountyRequest, Mask } from '../../lib/types';
 import { MaskBadge, Modal, Spinner, TagChip } from '../../components/ui';
 import { EvidenceUploader } from './EvidenceUploader';
@@ -175,9 +175,9 @@ export default function RequestPage() {
               {s.evidence.length > 0 && (
                 <div className="row" style={{ gap: 12, marginTop: 10 }}>
                   {s.evidence.map((f) => (
-                    <a key={f.id} href={f.url} target="_blank" rel="noreferrer">
+                    <button type="button" className="btn btn--ghost btn--sm" key={f.id} onClick={() => void openProtectedFile(f.url, f.name).catch((reason) => toast.push(reason.message, 'bad'))}>
                       📎 {f.name} <span className="muted">{fmtSize(f.size)}</span>
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}

@@ -170,7 +170,7 @@ const REQUEST_EN = {
  * @param {boolean} reveal      true = bypass the paywall for an authorized view
  */
 export function publicOffer(offer, viewer, reveal = false) {
-  reveal = reveal || ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(viewer?.siteRole);
+  reveal = reveal || ['read_only_admin', 'event_staff'].includes(viewer?.siteRole);
   const isOwner = viewer && userOfProfile(offer.profileId)?.id === viewer.id;
   const tiers = offer.tiers.map((t) => {
     const unlocked = reveal || isOwner || (viewer ? hasUnlocked(viewer.id, offer.id, t.id) : false);
@@ -205,7 +205,7 @@ export function publicOffer(offer, viewer, reveal = false) {
 }
 
 export function publicRequest(request, viewer, reveal = false) {
-  reveal = reveal || ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(viewer?.siteRole);
+  reveal = reveal || ['read_only_admin', 'event_staff'].includes(viewer?.siteRole);
   const isOwner = viewer && userOfProfile(request.profileId)?.id === viewer.id;
   const subs = db.submissions.filter((s) => s.requestId === request.id);
   return {
@@ -241,7 +241,7 @@ export function publicRequest(request, viewer, reveal = false) {
 export function evidenceById(id) {
   const e = db.evidence.find((x) => x.id === id);
   if (!e) return null;
-  return { id: e.id, name: e.name, url: e.url, mime: e.mime, size: e.size };
+  return { id: e.id, name: e.name, url: `/api/upload/evidence/${e.id}`, mime: e.mime, size: e.size };
 }
 
 /* --------------------------------- 审计 --------------------------------- */

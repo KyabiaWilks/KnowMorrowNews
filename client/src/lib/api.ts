@@ -52,6 +52,28 @@ export const post = <T = any,>(p: string, body?: unknown, ghost = false) => api<
 export const patch = <T = any,>(p: string, body?: unknown) => api<T>(p, { method: 'PATCH', body });
 export const del = <T = any,>(p: string, ghost = false) => api<T>(p, { method: 'DELETE', ghost });
 
+export async function openProtectedFile(url: string, filename: string) {
+  const headers: Record<string, string> = {};
+  const token = tokenStore.get();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    let message = `File request failed (${response.status})`;
+    try {
+      const data = await response.json();
+      if (data.error) message = data.error;
+    } catch {}
+    throw new ApiError(response.status, message);
+  }
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.target = '_blank';
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+}
+
 export function qs(params: Record<string, string | number | undefined | null>) {
   const s = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '') s.set(k, String(v));
