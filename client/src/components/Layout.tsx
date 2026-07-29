@@ -133,7 +133,7 @@ export function Layout() {
                 <Link to="/profile">Profile</Link>
                 <Link to="/wallet">Wallet</Link>
                 <Link to="/notifications">Notifications</Link>
-                <Link to="/masks">Masks</Link>
+                <Link to="/tavern/desk?tab=masks">Masks</Link>
               </div>
               <button className="btn btn--ghost mobile-signout" onClick={signOut}>Sign out</button>
             </>

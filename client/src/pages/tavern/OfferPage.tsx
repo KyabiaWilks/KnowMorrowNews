@@ -20,10 +20,23 @@ export default function OfferPage() {
     try { const result = await post<{ offer: Offer }>(`/tavern/offers/${id}/purchase`, { tierId: buying === 'buyout' ? null : buying.id, buyout: buying === 'buyout', buyerProfileId: maskId || null }); setOffer(result.offer); setBuying(null); toast.push(buying === 'buyout' ? 'Exclusive buyout completed. Every tier is now unlocked.' : 'Unlocked. The seller cannot see your account identity.', 'good'); await refresh(); }
     catch (error) { toast.push((error as Error).message, 'bad'); } finally { setBusy(false); }
   };
+  const withdraw = async () => {
+    if (!offer || !window.confirm('Withdraw this listing? It will disappear from the Tavern, but existing buyers will keep access to what they purchased. This cannot be undone.')) return;
+    setBusy(true);
+    try {
+      await post(`/tavern/offers/${offer.id}/withdraw`);
+      setOffer({ ...offer, status: 'withdrawn' });
+      toast.push('Listing withdrawn. Existing buyers still have access from My Purchases.', 'good');
+    } catch (reason) {
+      toast.push((reason as Error).message, 'bad');
+    } finally {
+      setBusy(false);
+    }
+  };
   if (error) return <div className="tavern empty">{error}</div>;
   if (!offer) return <div className="tavern"><Spinner label="Opening this tip" /></div>;
   return <div className="tavern stack" style={{ gap: 20 }}><TavernNotice /><Link to="/tavern" className="muted">← Back to the Tavern</Link>
-    <div className="card card--pad stack"><div className="row row--between"><MaskBadge mask={offer.seller} /><div className="row"><span className="muted">{fromNow(offer.createdAt)} · {offer.views} views</span><ReportButton targetType="offer" targetId={offer.id} /></div></div><h1 style={{ fontSize: 27 }}>{offer.title}</h1>{offer.summary && <p className="soft" style={{ margin: 0 }}>{offer.summary}</p>}<div className="row" style={{ gap: 6 }}>{offer.tags.map((value) => <TagChip key={value} label={value} />)}</div>{offer.isOwner && <div className="chip chip--warn">This is your listing</div>}{offer.status !== 'open' && <div className="chip chip--danger">This listing is closed</div>}</div>
+    <div className="card card--pad stack"><div className="row row--between"><MaskBadge mask={offer.seller} /><div className="row"><span className="muted">{fromNow(offer.createdAt)} · {offer.views} views</span><ReportButton targetType="offer" targetId={offer.id} /></div></div><h1 style={{ fontSize: 27 }}>{offer.title}</h1>{offer.summary && <p className="soft" style={{ margin: 0 }}>{offer.summary}</p>}<div className="row" style={{ gap: 6 }}>{offer.tags.map((value) => <TagChip key={value} label={value} />)}</div><div className="row row--between">{offer.isOwner && <div className="chip chip--warn">This is your listing</div>}{offer.isOwner && offer.status === 'open' && !user?.readOnly && <button type="button" className="btn btn--danger btn--sm" disabled={busy} onClick={() => void withdraw()}>Withdraw listing</button>}{offer.status !== 'open' && <div className="chip chip--danger">This listing is closed</div>}</div></div>
     {offer.exclusive && <div className="card card--pad row row--between"><div><div className="eyebrow">EXCLUSIVE BUYOUT</div><strong>One buyer receives every tier; the listing then closes.</strong></div><div className="row"><span className="tier__price">{tmt(offer.exclusivePrice || 0)}</span><button className="btn btn--primary" disabled={!user || user.readOnly || offer.isOwner || offer.status !== 'open'} onClick={() => setBuying('buyout')}>Buy out exclusively</button></div></div>}
     <div className="stack"><div className="eyebrow">{offer.exclusive ? 'INCLUDED INFORMATION TIERS' : 'ACCESS TIERS · MORE DETAIL, HIGHER PRICE'}</div>{offer.tiers.map((tier) => <div key={tier.id} className={`tier ${tier.unlocked ? 'tier--unlocked' : 'tier--locked'}`}>
       <div style={{ flex: 1 }}><div className="row row--between"><div><strong style={{ fontSize: 15.5 }}>{tier.name}</strong>{tier.detail && <span className="muted"> · {tier.detail}</span>}</div><div className="row"><span className="muted">{tier.buyers} purchases</span>{tier.evidenceCount > 0 && <span className="chip chip--good">📎 {tier.evidenceCount} evidence files</span>}</div></div>

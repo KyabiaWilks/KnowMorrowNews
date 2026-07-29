@@ -228,7 +228,7 @@ export default function RequestPage() {
             </select>
             {masks.length === 0 && (
               <div className="hint">
-                You do not have a mask yet. <Link to="/masks">Create one first →</Link>
+                You do not have a mask yet. <Link to="/tavern/desk?tab=masks">Create one first →</Link>
               </div>
             )}
           </div>

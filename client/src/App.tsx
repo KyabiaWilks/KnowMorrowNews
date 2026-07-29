@@ -16,7 +16,6 @@ import ComposePage from './pages/tavern/ComposePage';
 import DeskPage from './pages/tavern/DeskPage';
 import RulesPage from './pages/tavern/RulesPage';
 import DisclosuresPage from './pages/tavern/DisclosuresPage';
-import MasksPage from './pages/MasksPage';
 import WalletPage from './pages/WalletPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/admin/AdminPage';
@@ -72,14 +71,7 @@ export default function App() {
           <Route path="tavern/offers/:id" element={<OfferPage />} />
           <Route path="tavern/requests/:id" element={<RequestPage />} />
 
-          <Route
-            path="masks"
-            element={
-              <RequireAuth>
-                <MasksPage />
-              </RequireAuth>
-            }
-          />
+          <Route path="masks" element={<Navigate to="/tavern/desk?tab=masks" replace />} />
           <Route
             path="wallet"
             element={

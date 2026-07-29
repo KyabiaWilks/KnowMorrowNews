@@ -43,6 +43,6 @@ export default function ProfilePage() {
       </div>
       {user.minecraftUuid && <div className="row"><img className="mc-avatar" src={`/api/auth/minecraft-avatar/${user.minecraftUuid}`} alt={`${user.minecraftId || 'Minecraft'} avatar`} /><div><strong>{user.minecraftId}</strong><div className="muted">Verified through Mojang</div></div></div>}
     </section>
-    <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Tavern identities.</div></div><Link className="btn" to="/masks">Manage masks</Link></section>
+    <section className="card card--pad row row--between"><div><strong>Masks</strong><div className="muted">Manage your anonymous Tavern identities.</div></div><Link className="btn" to="/tavern/desk?tab=masks">Manage masks</Link></section>
   </div>;
 }

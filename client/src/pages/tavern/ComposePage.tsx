@@ -145,7 +145,7 @@ export default function ComposePage() {
           <div style={{ fontSize: 40 }}>🎭</div>
           <h2>You do not have an active mask</h2>
           <div className="muted">Nobody posts under a real account name. Create a mask before returning to the Tavern.</div>
-          <Link to="/masks" className="btn btn--primary" style={{ margin: '0 auto' }}>
+          <Link to="/tavern/desk?tab=masks" className="btn btn--primary" style={{ margin: '0 auto' }}>
             Create a mask
           </Link>
         </div>
@@ -177,7 +177,7 @@ export default function ComposePage() {
       <div className="card card--pad stack">
         <div className="row" style={{ alignItems: 'flex-start' }}>
           <div className="field" style={{ flex: 1, minWidth: 220 }}>
-            <label>Post under which mask?</label>
+            <div className="row row--between"><label>Post under which mask?</label><Link to="/tavern/desk?tab=masks" className="muted" style={{ fontSize: 12 }}>＋ Create a new mask</Link></div>
             <select className="select" value={common.profileId} onChange={(e) => setCommon({ ...common, profileId: e.target.value })}>
               {masks.map((m) => (
                 <option key={m.id} value={m.id}>

@@ -3,7 +3,8 @@ import { get, qs } from '../lib/api';
 
 export type RecipientMatch = {
   id: string;
-  username: string;
+  identityType: 'account' | 'mask';
+  username: string | null;
   displayName: string;
   minecraftId: string | null;
   minecraftUuid: string | null;
@@ -12,7 +13,7 @@ export type RecipientMatch = {
   mask: { alias: string; sigil: string } | null;
 };
 
-export function RecipientSearch({ value, onChange }: { value: RecipientMatch | null; onChange: (recipient: RecipientMatch | null) => void }) {
+export function RecipientSearch({ value, onChange, separateIdentities = false }: { value: RecipientMatch | null; onChange: (recipient: RecipientMatch | null) => void; separateIdentities?: boolean }) {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<RecipientMatch[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export function RecipientSearch({ value, onChange }: { value: RecipientMatch | n
     }
     setLoading(true);
     const timer = window.setTimeout(() => {
-      void get<{ items: RecipientMatch[] }>(`/wallet/recipients${qs({ q: normalized })}`)
+      void get<{ items: RecipientMatch[] }>(`/wallet/recipients${qs({ q: normalized, separate: separateIdentities ? 1 : undefined })}`)
         .then((result) => {
           if (sequence === requestSequence.current) setItems(result.items);
         })
@@ -40,11 +41,11 @@ export function RecipientSearch({ value, onChange }: { value: RecipientMatch | n
         });
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [query, value]);
+  }, [query, value, separateIdentities]);
 
   if (value) return <div className="recipient-selected">
     <RecipientAvatar recipient={value} />
-    <div style={{ flex: 1 }}><strong>{value.displayName}</strong><div className="muted">@{value.username}{value.minecraftId ? ` · MC ${value.minecraftId}` : ''}</div></div>
+    <div style={{ flex: 1 }}><strong>{value.displayName}</strong><div className="muted">{value.identityType === 'mask' ? 'Mask identity' : `@${value.username}${value.minecraftId ? ` · MC ${value.minecraftId}` : ''}`}</div></div>
     <button className="btn btn--sm" onClick={() => { onChange(null); setQuery(''); }}>Change</button>
   </div>;
 
@@ -53,7 +54,7 @@ export function RecipientSearch({ value, onChange }: { value: RecipientMatch | n
     {query.trim().length >= 1 && <div className="recipient-results">
       {items.map((recipient) => <button type="button" key={recipient.id} className="recipient-result" onClick={() => onChange(recipient)}>
         <RecipientAvatar recipient={recipient} />
-        <span style={{ flex: 1 }}><strong>{recipient.displayName}</strong><span className="muted">@{recipient.username}{recipient.minecraftId ? ` · MC ${recipient.minecraftId}` : ''}</span></span>
+        <span style={{ flex: 1 }}><strong>{recipient.displayName}</strong><span className="muted">{recipient.identityType === 'mask' ? 'Mask identity · account hidden' : `@${recipient.username}${recipient.minecraftId ? ` · MC ${recipient.minecraftId}` : ''}`}</span></span>
         <span className="chip">{recipient.matchedBy}</span>
       </button>)}
       {!loading && items.length === 0 && <div className="muted" style={{ padding: 12 }}>No matching recipient.</div>}

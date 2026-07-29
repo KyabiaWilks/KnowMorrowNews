@@ -1482,6 +1482,15 @@ button.chip:hover {
   display: none;
 }
 
+.desk-hub__card {
+  height: 100%;
+}
+
+.desk-hub__action {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
 @media (max-width: 1179px) {
   .tavern-market {
     display: block;

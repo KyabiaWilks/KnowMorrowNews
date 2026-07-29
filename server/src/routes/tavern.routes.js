@@ -14,6 +14,7 @@ import {
   publicRequest,
   userOfProfile,
   hasUnlocked,
+  evidenceById,
 } from '../services.js';
 import { bad, matchText, missing, now, paginate, uid, wrap, HttpError } from '../util.js';
 import { notify } from '../notifications.js';
@@ -385,6 +386,7 @@ tavernRouter.post(
     const offer = db.offers.find((x) => x.id === req.params.id);
     if (!offer) throw missing('Information listing not found.');
     if (userOfProfile(offer.profileId)?.id !== req.user.id) throw new HttpError(403, 'You can withdraw only your own information listing.');
+    if (offer.status !== 'open') throw bad('Only an active listing can be withdrawn.');
     offer.status = 'withdrawn';
     save();
     res.json({ ok: true });
@@ -705,6 +707,23 @@ tavernRouter.get(
           paid: s.paid || 0,
           createdAt: s.createdAt,
         })),
+      received: db.submissions
+        .filter((s) => s.status === 'accepted')
+        .flatMap((s) => {
+          const request = db.requests.find((r) => r.id === s.requestId);
+          if (!request || userOfProfile(request.profileId)?.id !== req.user.id) return [];
+          const tier = request.tiers.find((item) => item.id === s.tierId);
+          return [{
+            id: s.id,
+            requestId: request.id,
+            requestTitle: request.title,
+            tierName: tier?.name || 'Accepted submission',
+            content: s.content,
+            evidence: (s.evidenceIds || []).map(evidenceById).filter(Boolean),
+            paid: s.paid || 0,
+            createdAt: s.createdAt,
+          }];
+        }),
     });
   })
 );

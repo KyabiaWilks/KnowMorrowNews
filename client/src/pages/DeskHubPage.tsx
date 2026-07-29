@@ -14,18 +14,18 @@ export default function DeskHubPage() {
         </div>
       </div>
       <div className={`grid ${editorial ? 'grid--2' : ''}`}>
-        <Link to="/tavern/desk" className="card card--pad card--hover stack">
+        <Link to="/tavern/desk" className="card card--pad card--hover stack desk-hub__card">
           <div style={{ fontSize: 34 }}>🍺</div>
           <h2>The Tavern Desk</h2>
           <p className="muted">Review listings, requests, unlocked intelligence, submissions and arbitration reports.</p>
-          <span className="btn btn--primary">Open Tavern Desk →</span>
+          <span className="btn btn--primary desk-hub__action">Open Tavern Desk →</span>
         </Link>
         {editorial && (
-          <Link to="/desk/news" className="card card--pad card--hover stack">
+          <Link to="/desk/news" className="card card--pad card--hover stack desk-hub__card">
             <div style={{ fontSize: 34 }}>📰</div>
             <h2>News Desk</h2>
             <p className="muted">{user?.readOnly ? 'Review published news and drafts in read-only mode.' : 'Write, save and publish reporting to the News section.'}</p>
-            <span className="btn btn--primary">Open News Desk →</span>
+            <span className="btn btn--primary desk-hub__action">Open News Desk →</span>
           </Link>
         )}
       </div>
