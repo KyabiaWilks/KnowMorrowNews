@@ -26,7 +26,7 @@ export default function ProfilePage() {
   };
 
   const markDeparted = async () => {
-    const confirmation = window.prompt('This is permanent. Your account and every mask will become read-only, and your name will enter the Memorial Hall. Type I HAVE DEPARTED to continue.');
+    const confirmation = window.prompt('This is permanent. Your account will become read-only, every mask will be retired, and your name will enter the Memorial Hall. Existing Tavern listings will remain available. Type I HAVE DEPARTED to continue.');
     if (confirmation !== 'I HAVE DEPARTED') {
       if (confirmation !== null) toast.push('The confirmation phrase did not match. No changes were made.', 'info');
       return;

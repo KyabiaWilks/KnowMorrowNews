@@ -260,10 +260,6 @@ authRouter.patch(
       req.user.siteRole = 'read_only_user';
       req.user.role = 'user';
       for (const profile of db.profiles.filter((item) => item.userId === req.user.id)) profile.retired = true;
-      for (const offer of db.offers) {
-        const profile = db.profiles.find((item) => item.id === offer.profileId);
-        if (profile?.userId === req.user.id && offer.status === 'open') offer.status = 'withdrawn';
-      }
     }
     save();
     res.json({ user: publicUser(req.user) });
