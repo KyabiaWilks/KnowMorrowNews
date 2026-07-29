@@ -225,7 +225,7 @@ tavernRouter.get(
   '/offers',
   wrap((req, res) => {
     const { q, tag, evidence, sort = 'new' } = req.query;
-    let items = db.offers.filter((o) => !o.hiddenByAdmin && o.status !== 'withdrawn' && !isBlocked(o, req.user));
+    let items = db.offers.filter((o) => !o.hiddenByAdmin && o.status === 'open' && !isBlocked(o, req.user));
     if (q) items = items.filter((o) => {
       const item = publicOffer(o, req.user);
       return matchText(q, item.title, item.summary, ...(item.tags || []), item.seller.alias);
