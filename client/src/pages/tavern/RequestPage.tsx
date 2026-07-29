@@ -19,7 +19,7 @@ export default function RequestPage() {
   const [error, setError] = useState('');
   const [masks, setMasks] = useState<Mask[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ profileId: '', tierId: '', content: '' });
+  const [form, setForm] = useState({ profileId: '', tierId: '', title: '', content: '' });
   const [files, setFiles] = useState<EvidenceFile[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -47,9 +47,9 @@ export default function RequestPage() {
       });
       setRequest(r.request);
       setOpen(false);
-      setForm({ profileId: '', tierId: '', content: '' });
+      setForm({ profileId: '', tierId: '', title: '', content: '' });
       setFiles([]);
-      toast.push('Submitted. If accepted, your reward is paid directly from escrow.', 'good');
+      toast.push('Report submitted. Payment will be settled after the request recipient manually accepts it.', 'good');
     } catch (err) {
       toast.push((err as Error).message, 'bad');
     } finally {
@@ -61,7 +61,7 @@ export default function RequestPage() {
     try {
       const r = await post<{ request: BountyRequest }>(`/tavern/requests/${id}/settle`, { submissionId, action });
       setRequest(r.request);
-      toast.push(action === 'accept' ? 'Accepted and paid' : 'Declined and recorded', action === 'accept' ? 'good' : 'info');
+      toast.push(action === 'accept' ? 'Report accepted, paid, and unlocked.' : 'Report declined and recorded.', action === 'accept' ? 'good' : 'info');
       await refresh();
     } catch (err) {
       toast.push((err as Error).message, 'bad');
@@ -165,10 +165,11 @@ export default function RequestPage() {
               </div>
 
               <div style={{ marginTop: 10 }}>
+                {s.title && <h3 style={{ fontSize: 17, marginBottom: 8 }}>{s.title}</h3>}
                 {s.content ? (
                   <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{s.content}</div>
                 ) : (
-                  <div className="redacted">Submission content is visible only to the requester.</div>
+                  <div className="redacted">{request.isOwner && s.status === 'pending' ? 'Accept and pay this report to unlock its confidential text and evidence.' : 'Confidential report text is locked.'}</div>
                 )}
               </div>
 
@@ -186,7 +187,7 @@ export default function RequestPage() {
               {request.isOwner && s.status === 'pending' && (
                 <div className="row" style={{ marginTop: 12 }}>
                   <button className="btn btn--primary btn--sm" onClick={() => settle(s.id, 'accept')}>
-                    Accept and pay {tmt(tier?.price ?? 0)}
+                    Accept, pay {tmt(tier?.price ?? 0)}, and unlock
                   </button>
                   <button className="btn btn--danger btn--sm" onClick={() => settle(s.id, 'reject')}>
                     Decline
@@ -202,14 +203,14 @@ export default function RequestPage() {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Submit information"
-        subtitle="Only the requester can read this submission. The Tavern arbitration team may inspect it if a dispute is opened."
+        title="Submit a report"
+        subtitle="The requester sees your title first. Your confidential text and evidence unlock only if they manually accept and pay for the report."
         footer={
           <>
             <button className="btn" onClick={() => setOpen(false)}>
               Cancel
             </button>
-            <button className="btn btn--primary" onClick={submit} disabled={busy || !form.profileId || !form.tierId || form.content.trim().length < 10}>
+            <button className="btn btn--primary" onClick={submit} disabled={busy || !form.profileId || !form.tierId || form.title.trim().length < 4 || form.content.trim().length < 10}>
               {busy ? 'Submitting…' : 'Submit'}
             </button>
           </>
@@ -244,10 +245,15 @@ export default function RequestPage() {
             </select>
           </div>
           <div className="field">
-            <label>Information</label>
-            <textarea className="textarea" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Specific, verifiable details are more likely to be accepted." />
+            <label>Report title (visible before payment)</label>
+            <input className="input" value={form.title} maxLength={80} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Describe what your report provides without revealing the answer" />
+          </div>
+          <div className="field">
+            <label>Confidential report text</label>
+            <textarea className="textarea" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="This text remains locked until the requester accepts and pays." />
           </div>
           <EvidenceUploader files={files} onChange={setFiles} />
+          <div className="notice-banner">Payment is not automatic when you submit. The reward is settled only after the request recipient manually chooses and accepts your report.</div>
         </div>
       </Modal>
     </div>

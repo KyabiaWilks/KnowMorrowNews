@@ -223,13 +223,16 @@ export function publicRequest(request, viewer, reveal = false) {
     submissionCount: subs.length,
     maxPrice: request.tiers.length ? Math.max(...request.tiers.map((t) => t.price)) : 0,
     submissions: subs.map((s) => {
-      const visible = reveal || isOwner || (viewer && userOfProfile(s.profileId)?.id === viewer.id);
+      const isSupplier = !!viewer && userOfProfile(s.profileId)?.id === viewer.id;
+      const canSeeTitle = reveal || isOwner || isSupplier;
+      const visible = reveal || isSupplier || (isOwner && s.status === 'accepted');
       return {
         id: s.id,
         tierId: s.tierId,
         supplier: publicProfile(s.profileId),
         status: s.status,
         createdAt: s.createdAt,
+        title: canSeeTitle ? (s.title || 'Untitled report') : null,
         content: visible ? s.content : null,
         evidence: visible ? (s.evidenceIds || []).map(evidenceById).filter(Boolean) : [],
         evidenceCount: (s.evidenceIds || []).length,

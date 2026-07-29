@@ -117,6 +117,7 @@ export type Submission = {
   supplier: Mask;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
+  title: string | null;
   content: string | null;
   evidence: EvidenceFile[];
   evidenceCount: number;

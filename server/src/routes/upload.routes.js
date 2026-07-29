@@ -23,7 +23,8 @@ function canAccessEvidence(user, evidence) {
   for (const submission of db.submissions) {
     if (!(submission.evidenceIds || []).includes(evidence.id)) continue;
     const request = db.requests.find((item) => item.id === submission.requestId);
-    if (userOfProfile(submission.profileId)?.id === user.id || (request && userOfProfile(request.profileId)?.id === user.id)) return true;
+    if (userOfProfile(submission.profileId)?.id === user.id) return true;
+    if (submission.status === 'accepted' && request && userOfProfile(request.profileId)?.id === user.id) return true;
   }
 
   const linkedReport = db.reports.some((report) => (report.evidenceIds || []).includes(evidence.id));

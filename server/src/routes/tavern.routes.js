@@ -487,14 +487,17 @@ tavernRouter.post(
 
     const tier = request.tiers.find((t) => t.id === req.body.tierId);
     if (!tier) throw missing('Reward tier not found.');
+    const title = String(req.body.title || '').trim().slice(0, 80);
+    if (title.length < 4) throw bad('Report title must be at least 4 characters.');
     const content = String(req.body.content || '').trim();
-    if (content.length < 10) throw bad('Submission content must be at least 10 characters.');
+    if (content.length < 10) throw bad('Confidential report text must be at least 10 characters.');
 
     const submission = {
       id: uid('sub'),
       requestId: request.id,
       profileId: profile.id,
       tierId: tier.id,
+      title,
       content,
       evidenceIds: (Array.isArray(req.body.evidenceIds) ? req.body.evidenceIds : []).filter((id) =>
         db.evidence.some((e) => e.id === id && e.uploaderId === req.user.id)
@@ -507,11 +510,17 @@ tavernRouter.post(
     if (requestOwner) {
       notify(requestOwner.id, {
         type: 'tavern_reply',
-        title: 'New reply to your reporting request',
-        message: `A contributor replied to “${request.title}” under the ${tier.name} reward tier.`,
+        title: 'New report awaiting your decision',
+        message: `A contributor submitted “${title}” to your request “${request.title}” under the ${tier.name} reward tier. Review the title and choose whether to accept and pay to unlock the confidential report.`,
         href: `/tavern/requests/${request.id}`,
       });
     }
+    notify(req.user.id, {
+      type: 'submission_update',
+      title: 'Report submitted for review',
+      message: `Your report “${title}” was submitted to “${request.title}”. Payment will be settled only after the request recipient manually accepts your report.`,
+      href: `/tavern/requests/${request.id}`,
+    });
     save();
     res.json({ request: publicRequest(request, req.user) });
   })
@@ -537,7 +546,7 @@ tavernRouter.post(
       if (supplier) notify(supplier.id, {
         type: 'submission_update',
         title: 'Tavern submission updated',
-        message: `Your reply to “${request.title}” was not accepted.`,
+        message: `Your report “${submission.title || 'Untitled report'}” submitted to “${request.title}” was not accepted.`,
         href: `/tavern/requests/${request.id}`,
       });
       save();
@@ -554,7 +563,7 @@ tavernRouter.post(
     notify(supplier.id, {
       type: 'submission_update',
       title: 'Tavern submission accepted',
-      message: `Your reply to “${request.title}” was accepted. ${tier.price} TMT has been released to your wallet.`,
+      message: `Your report “${submission.title || 'Untitled report'}” submitted to “${request.title}” was accepted. ${tier.price} TMT has been released to your wallet.`,
       href: `/tavern/requests/${request.id}`,
     });
 
@@ -717,6 +726,7 @@ tavernRouter.get(
             id: s.id,
             requestId: request.id,
             requestTitle: request.title,
+            reportTitle: s.title || 'Untitled report',
             tierName: tier?.name || 'Accepted submission',
             content: s.content,
             evidence: (s.evidenceIds || []).map(evidenceById).filter(Boolean),
