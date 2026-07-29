@@ -133,10 +133,11 @@ tavernRouter.post(
   })
 );
 
-function normalizeTags(input) {
+function normalizeTags(input, requireEvidence = true) {
   const list = [...new Set((Array.isArray(input) ? input : []).map((t) => TAG_SOURCE[String(t).trim()] || String(t).trim()).filter(Boolean))];
   const evidence = list.filter((t) => EVIDENCE_TAGS.includes(t));
-  if (evidence.length !== 1) throw bad('Choose exactly one evidence declaration: Detailed evidence or No detailed evidence.');
+  if (requireEvidence && evidence.length !== 1) throw bad('Choose exactly one evidence declaration: Detailed evidence or No detailed evidence.');
+  if (!requireEvidence && evidence.length > 1) throw bad('Choose no more than one evidence declaration.');
   const unknown = list.filter((t) => !db.tags.some((x) => x.label === t && !x.archived));
   if (unknown.length) throw bad(`Unrecognized tags: ${unknown.map((tag) => TAG_EN[tag] || tag).join(', ')}`);
   if (list.length > 8) throw bad('A post may have no more than 8 tags.');
@@ -425,7 +426,7 @@ tavernRouter.post(
     const profile = ownProfile(req.user, req.body.profileId);
     const title = String(req.body.title || '').trim().slice(0, 80);
     if (title.length < 4) throw bad('The public title must be at least 4 characters.');
-    const tags = normalizeTags(req.body.tags);
+    const tags = normalizeTags(req.body.tags, false);
 
     const tiers = (Array.isArray(req.body.tiers) ? req.body.tiers : []).map((t, i) => {
       const price = Math.round(Number(t.price));

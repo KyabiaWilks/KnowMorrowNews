@@ -105,10 +105,6 @@ export default function ComposePage() {
   };
 
   const submitRequest = async (confirmed = false) => {
-    if (!evidenceLabel) {
-      toast.push('Choose either “Detailed evidence” or “No detailed evidence” before publishing.', 'bad');
-      return;
-    }
     if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
       toast.push('Enter the deadline as YYYY-MM-DD.', 'bad');
       return;
@@ -123,7 +119,7 @@ export default function ComposePage() {
         profileId: common.profileId,
         title: common.title,
         brief,
-        tags: [evidenceLabel, ...common.tags],
+        tags: common.tags,
         tiers: reqTiers,
         deposit,
         deadline: deadline || null,
@@ -196,13 +192,15 @@ export default function ComposePage() {
           </div>
         </div>
 
-        <div className="field">
-          <label>Evidence declaration (public, required)</label>
-          <div className="row" style={{ gap: 6 }}>
-            {evidenceTags.map((label) => <button type="button" key={label} className={`chip ${evidenceLabel === label ? 'chip--on' : ''}`} onClick={() => setEvidenceLabel(label)}>{label}</button>)}
+        {kind === 'offer' && (
+          <div className="field">
+            <label>Evidence declaration (public, required)</label>
+            <div className="row" style={{ gap: 6 }}>
+              {evidenceTags.map((label) => <button type="button" key={label} className={`chip ${evidenceLabel === label ? 'chip--on' : ''}`} onClick={() => setEvidenceLabel(label)}>{label}</button>)}
+            </div>
+            {!evidenceLabel && <div className="hint">Choose exactly one evidence declaration.</div>}
           </div>
-          {!evidenceLabel && <div className="hint">Choose exactly one evidence declaration.</div>}
-        </div>
+        )}
 
         <div className="field">
           <label>Additional tags (public, optional)</label>

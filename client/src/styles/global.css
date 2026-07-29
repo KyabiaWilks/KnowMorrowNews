@@ -1429,6 +1429,87 @@ button.chip:hover {
   letter-spacing: .04em;
 }
 
+.tavern-market {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.tavern-market__column {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(142, 91, 55, 0.24);
+  background: rgba(255, 247, 231, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.48);
+}
+
+.tavern-market__column--requests {
+  border-left-color: rgba(199, 139, 58, 0.42);
+  background: rgba(249, 232, 201, 0.34);
+}
+
+.tavern-market__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 58px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(142, 91, 55, 0.2);
+}
+
+.tavern-market__heading h2 {
+  margin: 3px 0 0;
+  font-size: clamp(21px, 2vw, 28px);
+}
+
+.tavern-market__heading .select {
+  width: 145px;
+}
+
+.tavern-market__list {
+  display: grid;
+  gap: 12px;
+}
+
+.tavern-market__list > .card {
+  height: 100%;
+}
+
+.tavern-market__mobile-tabs {
+  display: none;
+}
+
+@media (max-width: 1179px) {
+  .tavern-market {
+    display: block;
+  }
+
+  .tavern-market__mobile-tabs {
+    display: flex;
+  }
+
+  .tavern-market__panel--inactive {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .tavern-market__column {
+    padding: 12px;
+  }
+
+  .tavern-market__heading {
+    align-items: flex-start;
+  }
+
+  .tavern-market__heading .select {
+    width: 132px;
+  }
+}
+
 .tavern-rules {
   width: min(940px, 100%);
   margin: 0 auto;
