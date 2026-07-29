@@ -120,7 +120,7 @@ function Gate({ onPass }: { onPass: () => void }) {
       ghostStore.set(res.sessionKey);
       onPass();
     } catch {
-      setErr('拒绝访问。');
+      setErr('Access denied.');
     } finally {
       setBusy(false);
     }

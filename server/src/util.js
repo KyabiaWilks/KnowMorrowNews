@@ -12,8 +12,8 @@ export class HttpError extends Error {
 }
 
 export const bad = (msg, extra) => new HttpError(400, msg, extra);
-export const denied = (msg = '没有权限') => new HttpError(403, msg);
-export const missing = (msg = '资源不存在') => new HttpError(404, msg);
+export const denied = (msg = 'You do not have permission to perform this action.') => new HttpError(403, msg);
+export const missing = (msg = 'The requested resource was not found.') => new HttpError(404, msg);
 
 /** 包装 async 路由，异常统一交给错误中间件 */
 export const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);

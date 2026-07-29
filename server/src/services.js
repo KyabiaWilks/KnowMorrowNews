@@ -54,11 +54,11 @@ export function lockEscrow(user, amount, ref) {
   if (w.available < amount) throw bad(`Insufficient balance for escrow. Available: ${w.available}; required: ${amount}.`);
   user.coins -= amount;
   user.escrow = (user.escrow ?? 0) + amount;
-  record(user.id, -amount, 'escrow_lock', '委托保证金托管', ref);
+  record(user.id, -amount, 'escrow_lock', 'Request escrow deposit', ref);
   save();
 }
 
-export function releaseEscrow(user, amount, ref, memo = '保证金解冻') {
+export function releaseEscrow(user, amount, ref, memo = 'Escrow released') {
   const take = Math.min(amount, user.escrow ?? 0);
   user.escrow -= take;
   user.coins += take;
@@ -67,7 +67,7 @@ export function releaseEscrow(user, amount, ref, memo = '保证金解冻') {
   return take;
 }
 
-export function payFromEscrow(payer, payee, amount, ref, memo = '委托结算') {
+export function payFromEscrow(payer, payee, amount, ref, memo = 'Request settlement') {
   if ((payer.escrow ?? 0) < amount) throw bad('Escrow does not contain enough funds to settle this reward tier.');
   payer.escrow -= amount;
   record(payer.id, -amount, 'escrow_settle', memo, ref);
@@ -133,7 +133,7 @@ export function publicProfile(profileId) {
     prf_chan: ['Seventh Adviser', 'Representing an office that prefers not to be named.'],
     prf_chan2: ['Empty Chair', ''],
   }[p.id] : null;
-  if (!p) return { id: null, alias: '已注销的面具', sigil: '👤', mark: '--------' };
+  if (!p) return { id: null, alias: 'Retired mask', sigil: '👤', mark: '--------' };
   return {
     id: p.id,
     alias: legacyProfile?.[0] || p.alias,

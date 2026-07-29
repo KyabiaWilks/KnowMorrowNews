@@ -115,7 +115,7 @@ newsRouter.get(
   '/:id',
   wrap((req, res) => {
     const a = db.news.find((x) => x.id === req.params.id || x.slug === req.params.id);
-    if (!a || a.status !== 'published') throw missing('这篇报道不存在或尚未刊发');
+    if (!a || a.status !== 'published') throw missing('This story does not exist or has not been published.');
     a.views = (a.views ?? 0) + 1;
     save();
 

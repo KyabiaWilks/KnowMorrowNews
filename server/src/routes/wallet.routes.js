@@ -75,8 +75,8 @@ walletRouter.post(
   requireAdmin,
   wrap((req, res) => {
     const amount = Math.min(500, Math.max(1, Number(req.body.amount) || 0));
-    if (!amount) throw bad('充值数量不合法');
-    credit(req.user, amount, 'topup', '番茄田收成（演示水龙头）');
+    if (!amount) throw bad('Top-up amount is invalid.');
+    credit(req.user, amount, 'topup', 'Tomato harvest (demo faucet)');
     res.json({ user: publicUser(req.user) });
   })
 );

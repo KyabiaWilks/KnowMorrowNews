@@ -53,10 +53,10 @@ adminRouter.post(
     const article = {
       id: uid('news'),
       slug: slugify(req.body.slug || req.body.title),
-      title: String(req.body.title || '未命名报道').slice(0, 120),
+      title: String(req.body.title || 'Untitled story').slice(0, 120),
       summary: String(req.body.summary || '').slice(0, 300),
       body: String(req.body.body || ''),
-      section: String(req.body.section || '要闻'),
+      section: String(req.body.section || 'Headlines'),
       tags: Array.isArray(req.body.tags) ? req.body.tags.slice(0, 8) : [],
       cover: req.body.cover || null,
       dateline: String(req.body.dateline || ''),
@@ -68,7 +68,7 @@ adminRouter.post(
       publishedAt: req.body.publishedAt || now(),
     };
     db.news.unshift(article);
-    audit(req.user, 'news.create', `创建报道《${article.title}》`);
+    audit(req.user, 'news.create', `Created story “${article.title}”`);
     save();
     res.json({ article });
   })
@@ -78,14 +78,14 @@ adminRouter.patch(
   '/news/:id',
   wrap((req, res) => {
     const a = db.news.find((x) => x.id === req.params.id);
-    if (!a) throw missing('报道不存在');
+    if (!a) throw missing('News article not found.');
     for (const key of ['title', 'summary', 'body', 'section', 'cover', 'dateline', 'status', 'featured', 'publishedAt']) {
       if (req.body[key] !== undefined) a[key] = req.body[key];
     }
     if (Array.isArray(req.body.tags)) a.tags = req.body.tags.slice(0, 8);
     if (Array.isArray(req.body.authorIds)) a.authorIds = req.body.authorIds;
     a.readingMinutes = Math.max(1, Math.round(String(a.body || '').length / 400));
-    audit(req.user, 'news.update', `修改报道《${a.title}》`);
+    audit(req.user, 'news.update', `Updated story “${a.title}”`);
     save();
     res.json({ article: a });
   })
@@ -95,8 +95,8 @@ adminRouter.delete(
   '/news/:id',
   wrap((req, res) => {
     const i = db.news.findIndex((x) => x.id === req.params.id);
-    if (i < 0) throw missing('报道不存在');
-    audit(req.user, 'news.delete', `删除报道《${db.news[i].title}》`);
+    if (i < 0) throw missing('News article not found.');
+    audit(req.user, 'news.delete', `Deleted story “${db.news[i].title}”`);
     db.news.splice(i, 1);
     save();
     res.json({ ok: true });
@@ -115,8 +115,8 @@ adminRouter.post(
   wrap((req, res) => {
     const j = {
       id: uid('jnl'),
-      name: String(req.body.name || '新同事').slice(0, 40),
-      title: String(req.body.title || '记者').slice(0, 40),
+      name: String(req.body.name || 'New colleague').slice(0, 40),
+      title: String(req.body.title || 'Journalist').slice(0, 40),
       avatar: req.body.avatar || null,
       portraitTone: req.body.portraitTone || '#2f6bff',
       tagline: String(req.body.tagline || '').slice(0, 80),
@@ -131,7 +131,7 @@ adminRouter.post(
       joinedAt: req.body.joinedAt || now(),
     };
     db.journalists.push(j);
-    audit(req.user, 'journalist.create', `新增记者 ${j.name}`);
+    audit(req.user, 'journalist.create', `Added journalist ${j.name}`);
     save();
     res.json({ journalist: j });
   })
@@ -141,14 +141,14 @@ adminRouter.patch(
   '/journalists/:id',
   wrap((req, res) => {
     const j = db.journalists.find((x) => x.id === req.params.id);
-    if (!j) throw missing('记者不存在');
+    if (!j) throw missing('Journalist not found.');
     for (const key of ['name', 'title', 'avatar', 'portraitTone', 'tagline', 'bio', 'contact', 'featured', 'hidden', 'joinedAt']) {
       if (req.body[key] !== undefined) j[key] = req.body[key];
     }
     for (const key of ['beats', 'awards', 'milestones', 'signatureWorks']) {
       if (Array.isArray(req.body[key])) j[key] = req.body[key];
     }
-    audit(req.user, 'journalist.update', `更新记者 ${j.name}`);
+    audit(req.user, 'journalist.update', `Updated journalist ${j.name}`);
     save();
     res.json({ journalist: j });
   })
@@ -158,8 +158,8 @@ adminRouter.delete(
   '/journalists/:id',
   wrap((req, res) => {
     const i = db.journalists.findIndex((x) => x.id === req.params.id);
-    if (i < 0) throw missing('记者不存在');
-    audit(req.user, 'journalist.delete', `移除记者 ${db.journalists[i].name}`);
+    if (i < 0) throw missing('Journalist not found.');
+    audit(req.user, 'journalist.delete', `Removed journalist ${db.journalists[i].name}`);
     db.journalists.splice(i, 1);
     save();
     res.json({ ok: true });
@@ -177,11 +177,11 @@ adminRouter.patch(
   '/tags/:id',
   wrap((req, res) => {
     const t = db.tags.find((x) => x.id === req.params.id);
-    if (!t) throw missing('标签不存在');
-    if (t.kind === 'system' && req.body.label && req.body.label !== t.label) throw bad('系统证据标签不可改名');
-    if (t.kind === 'system' && req.body.archived) throw bad('系统证据标签不可归档');
+    if (!t) throw missing('Tag not found.');
+    if (t.kind === 'system' && req.body.label && req.body.label !== t.label) throw bad('System evidence tags cannot be renamed.');
+    if (t.kind === 'system' && req.body.archived) throw bad('System evidence tags cannot be archived.');
     for (const key of ['label', 'color', 'description', 'archived']) if (req.body[key] !== undefined) t[key] = req.body[key];
-    audit(req.user, 'tag.update', `调整标签 ${t.label}`);
+    audit(req.user, 'tag.update', `Updated tag ${t.label}`);
     save();
     res.json({ tag: t });
   })
@@ -211,17 +211,17 @@ adminRouter.patch(
   '/users/:id',
   wrap((req, res) => {
     const u = db.users.find((x) => x.id === req.params.id);
-    if (!u) throw missing('用户不存在');
+    if (!u) throw missing('User not found.');
     if (req.body.siteRole && ['user', 'read_only_user', 'journalist', 'admin', 'read_only_admin'].includes(req.body.siteRole)) {
       u.siteRole = req.body.siteRole;
       u.role = req.body.siteRole === 'admin' ? 'admin' : 'user';
     }
     if (req.body.banned !== undefined) {
       u.banned = !!req.body.banned;
-      u.banReason = req.body.banned ? String(req.body.banReason || '管理员处置') : null;
+      u.banReason = req.body.banned ? String(req.body.banReason || 'Administrative action') : null;
     }
-    if (req.body.grant) credit(u, Math.abs(Number(req.body.grant)), 'grant', '管理员发放');
-    audit(req.user, 'user.update', `调整用户 ${u.username}`);
+    if (req.body.grant) credit(u, Math.abs(Number(req.body.grant)), 'grant', 'Administrative grant');
+    audit(req.user, 'user.update', `Updated user ${u.username}`);
     save();
     res.json({ user: publicUser(u) });
   })
@@ -232,18 +232,18 @@ adminRouter.patch(
 function describeTarget(r) {
   if (r.targetType === 'offer') {
     const o = db.offers.find((x) => x.id === r.targetId);
-    return { label: o ? `情报《${o.title}》` : '（已删除的情报）', profileId: o?.profileId || null };
+    return { label: o ? `Information: “${o.title}”` : '(deleted information listing)', profileId: o?.profileId || null };
   }
   if (r.targetType === 'request') {
     const q = db.requests.find((x) => x.id === r.targetId);
-    return { label: q ? `委托《${q.title}》` : '（已删除的委托）', profileId: q?.profileId || null };
+    return { label: q ? `Request: “${q.title}”` : '(deleted request)', profileId: q?.profileId || null };
   }
   if (r.targetType === 'submission') {
     const s = db.submissions.find((x) => x.id === r.targetId);
-    return { label: s ? `一条应征材料` : '（已删除的应征）', profileId: s?.profileId || null };
+    return { label: s ? 'Request submission' : '(deleted submission)', profileId: s?.profileId || null };
   }
   const p = db.profiles.find((x) => x.id === r.targetId);
-  return { label: p ? `马甲「${p.alias}」` : '（已注销的马甲）', profileId: p?.id || null };
+  return { label: p ? `Mask: “${p.alias}”` : '(retired mask)', profileId: p?.id || null };
 }
 
 adminRouter.get(
@@ -265,7 +265,7 @@ adminRouter.get(
           status: r.status,
           createdAt: r.createdAt,
           evidence: (r.evidenceIds || []).map((id) => db.evidence.find((e) => e.id === id)).filter(Boolean).map((e) => ({ id: e.id, name: e.name, url: e.url })),
-          reporter: r.reporterProfileId ? publicProfile(r.reporterProfileId) : { alias: '未具名举报', sigil: '✉' },
+          reporter: r.reporterProfileId ? publicProfile(r.reporterProfileId) : { alias: 'Unnamed reporter', sigil: '✉' },
           // 仲裁需要看到被举报方的真实账号，这是规约里写明的例外
           accused: accused
             ? (() => {
@@ -339,8 +339,8 @@ adminRouter.post(
   '/reports/:id/arbitrate',
   wrap((req, res) => {
     const report = db.reports.find((x) => x.id === req.params.id);
-    if (!report) throw missing('举报不存在');
-    if (report.status !== 'pending') throw bad('该举报已处理');
+    if (!report) throw missing('Report not found.');
+    if (report.status !== 'pending') throw bad('This report has already been processed.');
     const judgments = (db.arbitrationJudgments || []).filter((item) => item.reportId === report.id);
     if (new Set(judgments.map((item) => item.adminUserId)).size < 2) {
       throw bad('At least two administrators must submit independent judgments before the final decision.');
@@ -364,22 +364,22 @@ adminRouter.post(
           const q = db.requests.find((x) => x.id === report.targetId);
           if (q) q.hiddenByAdmin = true;
         }
-        executed.push('已下架涉事内容');
+        executed.push('Reported content removed');
       }
       if (penalties.includes('ban_all_alts')) {
         accusedUser.banned = true;
-        accusedUser.banReason = `仲裁裁定：${REPORT_REASONS.find((x) => x.id === report.reason)?.label || report.reason}`;
+        accusedUser.banReason = `Arbitration decision: ${REPORT_REASONS.find((x) => x.id === report.reason)?.label || report.reason}`;
         for (const p of db.profiles.filter((p) => p.userId === accusedUser.id)) p.retired = true;
         for (const o of db.offers.filter((o) => db.profiles.some((p) => p.id === o.profileId && p.userId === accusedUser.id))) {
           o.status = 'withdrawn';
         }
-        executed.push(`已封禁 ${accusedUser.username} 名下全部 ${db.profiles.filter((p) => p.userId === accusedUser.id).length} 个马甲`);
+        executed.push(`Suspended ${accusedUser.username} and all ${db.profiles.filter((p) => p.userId === accusedUser.id).length} associated masks`);
       }
       if (penalties.includes('freeze_funds')) {
         const amount = Math.max(0, Number(req.body.freezeAmount) || walletOf(accusedUser).available);
         accusedUser.frozenFunds = (accusedUser.frozenFunds ?? 0) + amount;
-        record(accusedUser.id, 0, 'freeze', `仲裁冻结 ${amount} TMT`, { type: 'report', id: report.id });
-        executed.push(`已冻结 ${amount} TMT`);
+        record(accusedUser.id, 0, 'freeze', `Arbitration freeze: ${amount} TMT`, { type: 'report', id: report.id });
+        executed.push(`Frozen ${amount} TMT`);
       }
       if (penalties.includes('compensate')) {
         const amount = Math.max(0, Number(req.body.compensation) || 0);
@@ -392,12 +392,12 @@ adminRouter.post(
         left -= fromEscrow;
         accusedUser.coins -= left;
         accusedUser.frozenFunds = Math.max(0, (accusedUser.frozenFunds ?? 0) - take);
-        record(accusedUser.id, -take, 'arbitration_debit', `仲裁划扣赔偿 ${take} TMT`, { type: 'report', id: report.id });
-        if (victim) credit(victim, take, 'arbitration_credit', `仲裁赔偿到账 ${take} TMT`, { type: 'report', id: report.id });
-        executed.push(`已划扣 ${take} TMT 赔付举报方`);
+        record(accusedUser.id, -take, 'arbitration_debit', `Arbitration compensation debit: ${take} TMT`, { type: 'report', id: report.id });
+        if (victim) credit(victim, take, 'arbitration_credit', `Arbitration compensation received: ${take} TMT`, { type: 'report', id: report.id });
+        executed.push(`Transferred ${take} TMT to compensate the reporting party`);
       }
       if (penalties.includes('public_disclosure')) {
-        executed.push('已列入公开处罚公告栏');
+        executed.push('Published a public disclosure notice');
       }
     }
 
@@ -407,7 +407,7 @@ adminRouter.post(
       verdict,
       severity,
       penalties,
-      summary: String(req.body.summary || '').slice(0, 300) || (verdict === 'upheld' ? '举报成立' : '举报不成立'),
+      summary: String(req.body.summary || '').slice(0, 300) || (verdict === 'upheld' ? 'Report upheld' : 'Report dismissed'),
       notes: String(req.body.notes || '').slice(0, 1000),
       executed,
       disclosure:
@@ -416,7 +416,7 @@ adminRouter.post(
               publishedAt: now(),
               subject: accusedUser.username,
               aliases: db.profiles.filter((p) => p.userId === accusedUser.id).map((p) => p.alias),
-              statement: String(req.body.disclosureText || '').slice(0, 500) || `因${REPORT_REASONS.find((x) => x.id === report.reason)?.label}，情节严重，依规约公开其站内身份。`,
+              statement: String(req.body.disclosureText || '').slice(0, 500) || `The account identity was disclosed following a severe finding of ${REPORT_REASONS.find((x) => x.id === report.reason)?.label || report.reason}.`,
             }
           : null,
       decidedBy: req.user.username,
@@ -424,7 +424,7 @@ adminRouter.post(
     };
     db.arbitrations.unshift(arb);
     report.status = verdict === 'upheld' ? 'upheld' : 'dismissed';
-    audit(req.user, 'report.arbitrate', `裁决举报 ${report.id}：${arb.summary}`);
+    audit(req.user, 'report.arbitrate', `Decided report ${report.id}: ${arb.summary}`);
     save();
     res.json({ arbitration: arb });
   })
@@ -452,9 +452,9 @@ adminRouter.patch(
   '/tomatoes/:id',
   wrap((req, res) => {
     const t = db.tomatoes.find((x) => x.id === req.params.id);
-    if (!t) throw missing('番茄不存在');
+    if (!t) throw missing('Tomato not found.');
     t.hidden = !!req.body.hidden;
-    audit(req.user, 'tomato.moderate', `${t.hidden ? '隐藏' : '恢复'}了 ${t.page} 上的一颗番茄`);
+    audit(req.user, 'tomato.moderate', `${t.hidden ? 'Hid' : 'Restored'} a tomato on ${t.page}`);
     save();
     res.json({ ok: true });
   })
@@ -466,7 +466,7 @@ adminRouter.post(
     const page = req.body.page;
     const before = db.tomatoes.length;
     db.tomatoes = db.tomatoes.filter((t) => (page ? t.page !== page : false));
-    audit(req.user, 'tomato.clear', `清扫 ${page || '全站'} 的番茄（${before - db.tomatoes.length} 颗）`);
+    audit(req.user, 'tomato.clear', `Cleared ${before - db.tomatoes.length} tomatoes from ${page || 'the entire site'}`);
     save();
     res.json({ removed: before - db.tomatoes.length });
   })

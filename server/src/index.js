@@ -50,7 +50,7 @@ app.use('/api', (_req, res) => res.status(404).json({ error: 'Not Found' }));
 app.use((err, _req, res, _next) => {
   const status = err.status || 500;
   if (status >= 500) console.error('[jontop]', err);
-  res.status(status).json({ error: err.message || '服务器开小差了', ...(err.extra || {}) });
+  res.status(status).json({ error: err.message || 'The server encountered an unexpected error.', ...(err.extra || {}) });
 });
 
 const server = app.listen(config.port, () => {

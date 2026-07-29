@@ -269,7 +269,7 @@ tavernRouter.post(
       );
       return {
         id: uid('tier'),
-        name: String(t.name || `第 ${i + 1} 档`).slice(0, 24),
+        name: String(t.name || `Tier ${i + 1}`).slice(0, 24),
         detail: String(t.detail || '').slice(0, 120),
         price,
         content,
@@ -427,7 +427,7 @@ tavernRouter.post(
       if (!Number.isFinite(price) || price <= 0) throw bad(`Reward tier ${i + 1} must be greater than 0 TMT.`);
       return {
         id: uid('rt'),
-        name: String(t.name || `第 ${i + 1} 档`).slice(0, 24),
+        name: String(t.name || `Tier ${i + 1}`).slice(0, 24),
         detail: String(t.detail || '').slice(0, 160),
         price,
       };
@@ -539,7 +539,7 @@ tavernRouter.post(
     const tier = request.tiers.find((t) => t.id === submission.tierId);
     const supplier = userOfProfile(submission.profileId);
     if (!supplier) throw bad('The supplier account is no longer available.');
-    payFromEscrow(req.user, supplier, tier.price, { type: 'request', id: request.id }, `委托《${request.title}》- ${tier.name}`);
+    payFromEscrow(req.user, supplier, tier.price, { type: 'request', id: request.id }, `Request “${request.title}” — ${tier.name}`);
     request.depositRemaining -= tier.price;
     submission.status = 'accepted';
     submission.paid = tier.price;
@@ -572,7 +572,7 @@ tavernRouter.post(
     const pending = db.submissions.filter((s) => s.requestId === request.id && s.status === 'pending');
     if (pending.length) throw bad(`${pending.length} submissions are still pending. Process them before closing the request.`);
 
-    releaseEscrow(req.user, request.depositRemaining, { type: 'request', id: request.id }, `委托《${request.title}》保证金退回`);
+    releaseEscrow(req.user, request.depositRemaining, { type: 'request', id: request.id }, `Escrow returned for request “${request.title}”`);
     request.depositRemaining = 0;
     request.status = 'closed';
     save();
@@ -583,24 +583,17 @@ tavernRouter.post(
 /* -------------------------------- 举报 -------------------------------- */
 
 export const REPORT_REASONS = [
-  { id: 'fake', label: '恶意提供假信息' },
-  { id: 'deadbeat', label: '恶意拖欠付款' },
-  { id: 'doxx', label: '试图人肉 / 泄露他人真实身份' },
-  { id: 'reupload', label: '倒卖他人情报' },
-  { id: 'illegal', label: '违法或危害公共安全的内容' },
-  { id: 'other', label: '其他' },
+  { id: 'fake', label: 'Deliberately false information' },
+  { id: 'deadbeat', label: 'Deliberate non-payment' },
+  { id: 'doxx', label: 'Harassment or identity exposure' },
+  { id: 'reupload', label: 'Reselling another source’s material' },
+  { id: 'illegal', label: 'Illegal or dangerous content' },
+  { id: 'other', label: 'Other' },
 ];
 
 tavernRouter.get(
   '/report-reasons',
-  wrap((_req, res) => res.json({ reasons: [
-    { id: 'fake', label: 'Deliberately false information' },
-    { id: 'deadbeat', label: 'Deliberate non-payment' },
-    { id: 'doxx', label: 'Harassment or identity exposure' },
-    { id: 'reupload', label: 'Reselling another source’s material' },
-    { id: 'illegal', label: 'Illegal or dangerous content' },
-    { id: 'other', label: 'Other' },
-  ] }))
+  wrap((_req, res) => res.json({ reasons: REPORT_REASONS }))
 );
 
 tavernRouter.post(
@@ -692,7 +685,7 @@ tavernRouter.get(
             amount: p.amount,
             createdAt: p.createdAt,
             offerId: p.offerId,
-            offerTitle: offer?.title || '（已撤下）',
+            offerTitle: offer?.title || '(withdrawn)',
             tierName: offer?.tiers.find((t) => t.id === p.tierId)?.name || '-',
           };
         }),
@@ -701,7 +694,7 @@ tavernRouter.get(
         .map((s) => ({
           id: s.id,
           requestId: s.requestId,
-          requestTitle: db.requests.find((r) => r.id === s.requestId)?.title || '（已撤下）',
+          requestTitle: db.requests.find((r) => r.id === s.requestId)?.title || '(withdrawn)',
           status: s.status,
           paid: s.paid || 0,
           createdAt: s.createdAt,
