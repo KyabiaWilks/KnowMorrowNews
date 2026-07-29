@@ -44,28 +44,111 @@ async function sendDiscordDm(discordId, message) {
   }
 }
 
-export function notify(userId, { type, title, message, href = null, discordMessage = null }) {
-  const user = db.users.find((item) => item.id === userId);
-  if (!user) return null;
-  const item = {
-    id: uid('ntf'),
-    userId,
-    type,
-    title,
-    message,
-    href,
-    readAt: null,
-    createdAt: now(),
+export const DELIVERY_OPTIONS = ['site_and_discord', 'site', 'discord', 'off'];
+
+export function notificationPreferences(user) {
+  return {
+    purchaseDelivery: DELIVERY_OPTIONS.includes(user?.notificationPrefs?.purchaseDelivery) ? user.notificationPrefs.purchaseDelivery : 'site_and_discord',
+    pendingReportsDelivery: DELIVERY_OPTIONS.includes(user?.notificationPrefs?.pendingReportsDelivery) ? user.notificationPrefs.pendingReportsDelivery : 'site_and_discord',
   };
-  db.notifications.unshift(item);
+}
+
+function shanghaiDayKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function maySendIncomeDm(user) {
+  const day = shanghaiDayKey();
+  user.notificationState ||= {};
+  if (user.notificationState.incomeDmDay !== day) {
+    user.notificationState.incomeDmDay = day;
+    user.notificationState.incomeDmCount = 0;
+  }
+  if ((user.notificationState.incomeDmCount || 0) >= 3) return false;
+  user.notificationState.incomeDmCount = (user.notificationState.incomeDmCount || 0) + 1;
+  return true;
+}
+
+export function notify(userId, { type, title, message, href = null, discordMessage = null, delivery = 'site_and_discord', category = null }) {
+  const user = db.users.find((item) => item.id === userId);
+  if (!user || delivery === 'off') return null;
+  const siteEnabled = delivery === 'site' || delivery === 'site_and_discord';
+  const discordEnabled = delivery === 'discord' || delivery === 'site_and_discord';
+  const item = siteEnabled
+    ? {
+        id: uid('ntf'),
+        userId,
+        type,
+        title,
+        message,
+        href,
+        readAt: null,
+        createdAt: now(),
+      }
+    : null;
+  if (item) db.notifications.unshift(item);
+  let maySendDiscord = discordEnabled && user.discordId && discordMessage !== false;
+  if (maySendDiscord && category === 'income') maySendDiscord = maySendIncomeDm(user);
   save();
-  if (user.discordId && discordMessage !== false) {
+  if (maySendDiscord) {
     void sendDiscordDm(user.discordId, discordMessage || `**${title}**\n${message}${href ? `\n${config.clientOrigin}${href}` : ''}`)
       .then((delivery) => {
-        item.discordDelivery = delivery.ok ? 'sent' : 'failed';
-        item.discordDeliveryError = delivery.ok ? null : delivery.reason;
+        if (item) {
+          item.discordDelivery = delivery.ok ? 'sent' : 'failed';
+          item.discordDeliveryError = delivery.ok ? null : delivery.reason;
+        }
         save();
       });
   }
   return item;
+}
+
+let digestTimer = null;
+let digestInterval = null;
+
+function sendPendingReportDigests() {
+  const owners = new Map();
+  for (const request of db.requests.filter((item) => item.status === 'open')) {
+    const pending = db.submissions.filter((item) => item.requestId === request.id && item.status === 'pending');
+    if (!pending.length) continue;
+    const profile = db.profiles.find((item) => item.id === request.profileId);
+    if (!profile) continue;
+    const entry = owners.get(profile.userId) || [];
+    entry.push({ request, count: pending.length });
+    owners.set(profile.userId, entry);
+  }
+  for (const [userId, requests] of owners) {
+    const user = db.users.find((item) => item.id === userId);
+    if (!user) continue;
+    const count = requests.reduce((sum, item) => sum + item.count, 0);
+    const delivery = notificationPreferences(user).pendingReportsDelivery;
+    notify(user.id, {
+      type: 'pending_report_digest',
+      title: 'Reports are waiting for your decision',
+      message: `${count} unprocessed report${count === 1 ? '' : 's'} across ${requests.length} reporting request${requests.length === 1 ? '' : 's'} are waiting for manual acceptance or decline.`,
+      href: '/tavern/desk?tab=buying',
+      delivery,
+    });
+  }
+}
+
+export function startNotificationScheduler() {
+  const current = new Date();
+  const shanghai = new Date(current.getTime() + 8 * 60 * 60 * 1000);
+  let next = Date.UTC(shanghai.getUTCFullYear(), shanghai.getUTCMonth(), shanghai.getUTCDate(), -4, 0, 0, 0);
+  if (next <= current.getTime()) next += 24 * 60 * 60 * 1000;
+  digestTimer = setTimeout(() => {
+    sendPendingReportDigests();
+    digestInterval = setInterval(sendPendingReportDigests, 24 * 60 * 60 * 1000);
+  }, next - current.getTime());
+}
+
+export function stopNotificationScheduler() {
+  if (digestTimer) clearTimeout(digestTimer);
+  if (digestInterval) clearInterval(digestInterval);
 }

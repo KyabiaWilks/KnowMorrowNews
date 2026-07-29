@@ -134,6 +134,7 @@ walletRouter.post('/transfer', requireAuth, wrap((req, res) => {
     title: 'Tomato Coin received',
     message: `${req.user.displayName || req.user.username} sent you ${amount} TMT.`,
     href: '/wallet',
+    category: 'income',
   });
   save();
   res.json({ user: publicUser(req.user) });
@@ -162,6 +163,7 @@ walletRouter.post('/official-transfer', requireAuth, requireAdmin, wrap((req, re
     title: 'Official Tomato Coin transfer',
     message: `The Know Morrow administration sent you ${amount} TMT. ${memo}`,
     href: '/wallet',
+    category: 'income',
   });
   save();
   res.json({ ok: true, amount });

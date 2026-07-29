@@ -199,6 +199,7 @@ export function publicOffer(offer, viewer, reveal = false) {
     views: offer.views ?? 0,
     createdAt: offer.createdAt,
     isOwner: !!isOwner,
+    notificationSettings: isOwner ? { muted: !!offer.notificationsMuted, tierIds: offer.notificationTierIds || [] } : null,
     minPrice: Math.min(...offer.tiers.map((t) => t.price)),
     reportCount: db.reports.filter((r) => r.targetType === 'offer' && r.targetId === offer.id).length,
   };

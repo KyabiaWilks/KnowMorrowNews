@@ -17,7 +17,7 @@ import {
   evidenceById,
 } from '../services.js';
 import { bad, matchText, missing, now, paginate, uid, wrap, HttpError } from '../util.js';
-import { notify } from '../notifications.js';
+import { notificationPreferences, notify } from '../notifications.js';
 
 export const tavernRouter = Router();
 
@@ -367,15 +367,43 @@ tavernRouter.post(
     }
     const sellerProfile = profileById(offer.profileId);
     if (sellerProfile) sellerProfile.dealsClosed = (sellerProfile.dealsClosed ?? 0) + 1;
-    notify(seller.id, {
-      type: 'offer_purchase',
-      title: buyout ? 'Exclusive buyout completed' : 'Information purchased',
-      message: buyout ? `Your listing “${offer.title}” was bought out for ${price} TMT and is now closed.` : `A buyer unlocked “${offer.title}” for ${price} TMT.`,
-      href: `/tavern/offers/${offer.id}`,
-    });
+    const purchaseCount = db.purchases.filter((item) => item.offerId === offer.id).length;
+    const milestone = [1, 10, 100, 500].includes(purchaseCount);
+    const tierAlert = !buyout && (offer.notificationTierIds || []).includes(tier.id);
+    if (!offer.notificationsMuted && (buyout || milestone || tierAlert)) {
+      const reason = buyout
+        ? `Your listing “${offer.title}” was bought out for ${price} TMT and is now closed.`
+        : tierAlert
+          ? `A buyer unlocked your selected alert tier “${tier.name}” on “${offer.title}” for ${price} TMT.`
+          : `“${offer.title}” reached purchase milestone #${purchaseCount}. This purchase paid ${price} TMT.`;
+      notify(seller.id, {
+        type: 'offer_purchase',
+        title: buyout ? 'Exclusive buyout completed' : tierAlert ? 'Selected tier purchased' : `Purchase milestone #${purchaseCount}`,
+        message: reason,
+        href: `/tavern/offers/${offer.id}`,
+        delivery: notificationPreferences(seller).purchaseDelivery,
+        category: 'income',
+      });
+    }
     save();
 
     res.json({ offer: publicOffer(offer, req.user) });
+  })
+);
+
+tavernRouter.post(
+  '/offers/:id/notification-settings',
+  requireAuth,
+  wrap((req, res) => {
+    const offer = db.offers.find((item) => item.id === req.params.id);
+    if (!offer) throw missing('Information listing not found.');
+    if (userOfProfile(offer.profileId)?.id !== req.user.id) throw new HttpError(403, 'You can change notification settings only for your own listing.');
+    offer.notificationsMuted = !!req.body.muted;
+    const validTierIds = new Set(offer.tiers.map((tier) => tier.id));
+    offer.notificationTierIds = [...new Set(Array.isArray(req.body.tierIds) ? req.body.tierIds.map(String) : [])]
+      .filter((id) => validTierIds.has(id));
+    save();
+    res.json({ settings: { muted: offer.notificationsMuted, tierIds: offer.notificationTierIds } });
   })
 );
 
@@ -513,6 +541,7 @@ tavernRouter.post(
         title: 'New report awaiting your decision',
         message: `A contributor submitted “${title}” to your request “${request.title}” under the ${tier.name} reward tier. Review the title and choose whether to accept and pay to unlock the confidential report.`,
         href: `/tavern/requests/${request.id}`,
+        delivery: notificationPreferences(requestOwner).pendingReportsDelivery,
       });
     }
     notify(req.user.id, {
@@ -565,6 +594,7 @@ tavernRouter.post(
       title: 'Tavern submission accepted',
       message: `Your report “${submission.title || 'Untitled report'}” submitted to “${request.title}” was accepted. ${tier.price} TMT has been released to your wallet.`,
       href: `/tavern/requests/${request.id}`,
+      category: 'income',
     });
 
     const sp = profileById(submission.profileId);

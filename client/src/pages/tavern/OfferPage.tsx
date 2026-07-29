@@ -33,10 +33,21 @@ export default function OfferPage() {
       setBusy(false);
     }
   };
+  const saveAlertSettings = async (muted: boolean, tierIds: string[]) => {
+    if (!offer) return;
+    try {
+      const result = await post<{ settings: { muted: boolean; tierIds: string[] } }>(`/tavern/offers/${offer.id}/notification-settings`, { muted, tierIds });
+      setOffer({ ...offer, notificationSettings: result.settings });
+      toast.push('Listing notification settings saved.', 'good');
+    } catch (reason) {
+      toast.push((reason as Error).message, 'bad');
+    }
+  };
   if (error) return <div className="tavern empty">{error}</div>;
   if (!offer) return <div className="tavern"><Spinner label="Opening this tip" /></div>;
   return <div className="tavern stack" style={{ gap: 20 }}><TavernNotice /><Link to="/tavern" className="muted">← Back to the Tavern</Link>
     <div className="card card--pad stack"><div className="row row--between"><MaskBadge mask={offer.seller} /><div className="row"><span className="muted">{fromNow(offer.createdAt)} · {offer.views} views</span><ReportButton targetType="offer" targetId={offer.id} /></div></div><h1 style={{ fontSize: 27 }}>{offer.title}</h1>{offer.summary && <p className="soft" style={{ margin: 0 }}>{offer.summary}</p>}<div className="row" style={{ gap: 6 }}>{offer.tags.map((value) => <TagChip key={value} label={value} />)}</div><div className="row row--between">{offer.isOwner && <div className="chip chip--warn">This is your listing</div>}{offer.isOwner && offer.status === 'open' && !user?.readOnly && <button type="button" className="btn btn--danger btn--sm" disabled={busy} onClick={() => void withdraw()}>Withdraw listing</button>}{offer.status !== 'open' && <div className="chip chip--danger">This listing is closed</div>}</div></div>
+    {offer.isOwner && offer.notificationSettings && <section className="card card--pad stack"><div><div className="eyebrow">LISTING NOTIFICATIONS</div><h2>When should this post notify you?</h2></div><label className="row"><input type="checkbox" checked={offer.notificationSettings.muted} onChange={(event) => void saveAlertSettings(event.target.checked, offer.notificationSettings?.tierIds || [])} /><span><strong>Mute this entire listing</strong><span className="hint"> No purchase milestones, tier alerts, or buyout alerts will be sent.</span></span></label><div className="muted">By default, notifications are sent only for purchase #1, #10, #100, #500, and an exclusive buyout. Select tiers below to receive an alert every time that tier is purchased.</div><div className="row">{offer.tiers.map((tier) => { const checked = offer.notificationSettings?.tierIds.includes(tier.id) || false; return <label className="chip" key={tier.id}><input type="checkbox" disabled={offer.notificationSettings?.muted} checked={checked} onChange={(event) => { const current = offer.notificationSettings?.tierIds || []; const next = event.target.checked ? [...current, tier.id] : current.filter((id) => id !== tier.id); void saveAlertSettings(offer.notificationSettings?.muted || false, next); }} /> Notify when “{tier.name}” sells</label>; })}</div></section>}
     {offer.exclusive && <div className="card card--pad row row--between"><div><div className="eyebrow">EXCLUSIVE BUYOUT</div><strong>One buyer receives every tier; the listing then closes.</strong></div><div className="row"><span className="tier__price">{tmt(offer.exclusivePrice || 0)}</span><button className="btn btn--primary" disabled={!user || user.readOnly || offer.isOwner || offer.status !== 'open'} onClick={() => setBuying('buyout')}>Buy out exclusively</button></div></div>}
     <div className="stack"><div className="eyebrow">{offer.exclusive ? 'INCLUDED INFORMATION TIERS' : 'ACCESS TIERS · MORE DETAIL, HIGHER PRICE'}</div>{offer.tiers.map((tier) => <div key={tier.id} className={`tier ${tier.unlocked ? 'tier--unlocked' : 'tier--locked'}`}>
       <div style={{ flex: 1 }}><div className="row row--between"><div><strong style={{ fontSize: 15.5 }}>{tier.name}</strong>{tier.detail && <span className="muted"> · {tier.detail}</span>}</div><div className="row"><span className="muted">{tier.buyers} purchases</span>{tier.evidenceCount > 0 && <span className="chip chip--good">📎 {tier.evidenceCount} evidence files</span>}</div></div>

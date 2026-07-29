@@ -15,6 +15,7 @@ import { uploadRouter } from './routes/upload.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { ghostRouter } from './routes/ghost.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
+import { startNotificationScheduler, stopNotificationScheduler } from './notifications.js';
 
 if (isEmpty()) {
   console.log('[jontop] 数据库为空，正在写入初始内容…');
@@ -56,9 +57,11 @@ const server = app.listen(config.port, () => {
   console.log(`\n  🌙 JONTOP server  →  http://localhost:${config.port}`);
   console.log(`  🍅 一颗番茄 = ${config.tomatoPrice} TMT`);
 });
+startNotificationScheduler();
 
 async function shutdown(signal) {
   console.log(`[jontop] ${signal} received; saving data before shutdown.`);
+  stopNotificationScheduler();
   server.close(async () => {
     await closeDatabase();
     process.exit(0);

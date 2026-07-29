@@ -2,8 +2,22 @@ import { Router } from 'express';
 import { db, save } from '../db.js';
 import { requireAuth } from '../auth.js';
 import { missing, now, wrap } from '../util.js';
+import { DELIVERY_OPTIONS, notificationPreferences } from '../notifications.js';
 
 export const notificationsRouter = Router();
+
+notificationsRouter.get('/preferences', requireAuth, wrap((req, res) => {
+  res.json({ preferences: notificationPreferences(req.user) });
+}));
+
+notificationsRouter.post('/preferences', requireAuth, wrap((req, res) => {
+  req.user.notificationPrefs ||= {};
+  for (const key of ['purchaseDelivery', 'pendingReportsDelivery']) {
+    if (req.body[key] !== undefined && DELIVERY_OPTIONS.includes(req.body[key])) req.user.notificationPrefs[key] = req.body[key];
+  }
+  save();
+  res.json({ preferences: notificationPreferences(req.user) });
+}));
 
 notificationsRouter.get('/', requireAuth, wrap((req, res) => {
   const items = db.notifications

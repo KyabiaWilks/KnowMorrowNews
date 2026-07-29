@@ -107,6 +107,7 @@ export type Offer = {
   isOwner: boolean;
   minPrice: number;
   reportCount: number;
+  notificationSettings: { muted: boolean; tierIds: string[] } | null;
 };
 
 export type RequestTier = { id: string; name: string; detail: string; price: number };
