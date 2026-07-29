@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { get, post } from '../../lib/api';
 import type { EvidenceFile, Mask, Tag } from '../../lib/types';
-import { Spinner, TagPicker } from '../../components/ui';
+import { Modal, Spinner, TagPicker } from '../../components/ui';
 import { EvidenceUploader } from './EvidenceUploader';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -46,6 +46,7 @@ export default function ComposePage() {
   const [blockedCandidate, setBlockedCandidate] = useState<RecipientMatch | null>(null);
   const [exclusive, setExclusive] = useState(false);
   const [exclusivePrice, setExclusivePrice] = useState(500);
+  const [publishWarning, setPublishWarning] = useState<'offer' | 'request' | null>(null);
 
   const loadTags = () => get<{ tags: Tag[]; evidenceTags: string[] }>('/tavern/tags').then((r) => {
     setTags(r.tags);
@@ -76,8 +77,12 @@ export default function ComposePage() {
     }
   };
 
-  const submitOffer = async () => {
+  const submitOffer = async (confirmed = false) => {
     if (!evidenceLabel) return toast.push('Choose either “Detailed evidence” or “No detailed evidence” before publishing.', 'bad');
+    if (!confirmed) {
+      setPublishWarning('offer');
+      return;
+    }
     setBusy(true);
     try {
       const res = await post<{ offer: { id: string } }>('/tavern/offers', {
@@ -99,13 +104,17 @@ export default function ComposePage() {
     }
   };
 
-  const submitRequest = async () => {
+  const submitRequest = async (confirmed = false) => {
     if (!evidenceLabel) {
       toast.push('Choose either “Detailed evidence” or “No detailed evidence” before publishing.', 'bad');
       return;
     }
     if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
       toast.push('Enter the deadline as YYYY-MM-DD.', 'bad');
+      return;
+    }
+    if (!confirmed) {
+      setPublishWarning('request');
       return;
     }
     setBusy(true);
@@ -293,7 +302,7 @@ export default function ComposePage() {
             </div>
           ))}
 
-          <button className="btn btn--primary" disabled={busy} onClick={submitOffer}>
+          <button className="btn btn--primary" disabled={busy} onClick={() => void submitOffer()}>
             {busy ? 'Posting…' : 'Post to the wall'}
           </button>
         </div>
@@ -344,11 +353,46 @@ export default function ComposePage() {
             {deposit > (user?.wallet.available ?? 0) && <div className="error-text">Insufficient balance. Add tomato coin from your wallet first.</div>}
           </div>
 
-          <button className="btn btn--primary" disabled={busy || deposit > (user?.wallet.available ?? 0)} onClick={submitRequest}>
+          <button className="btn btn--primary" disabled={busy || deposit > (user?.wallet.available ?? 0)} onClick={() => void submitRequest()}>
             {busy ? 'Publishing…' : `Escrow ${tmt(deposit)} and publish`}
           </button>
         </div>
       )}
+      <Modal
+        open={publishWarning !== null}
+        onClose={() => setPublishWarning(null)}
+        title="Publication is permanent"
+        subtitle="Review every field before you continue."
+        footer={(
+          <>
+            <button className="btn" onClick={() => setPublishWarning(null)}>Go back and review</button>
+            <button
+              className="btn btn--primary"
+              onClick={() => {
+                const pending = publishWarning;
+                setPublishWarning(null);
+                if (pending === 'offer') void submitOffer(true);
+                if (pending === 'request') void submitRequest(true);
+              }}
+            >
+              I understand — publish
+            </button>
+          </>
+        )}
+      >
+        <div className="stack">
+          <div className="notice-banner">
+            Once this post is published, you cannot edit it. Its title, prices, content, tags, evidence, deadline, and other details are permanent—even if the post contains a typo.
+          </div>
+          <p className="soft" style={{ margin: 0 }}>
+            This rule prevents anyone from changing a listing after others have reviewed or transacted with it.
+          </p>
+          <p className="soft" style={{ margin: 0 }}>
+            In an exceptional situation, you may open a ticket in the Discord server and request a correction under administrator supervision. Approval is not guaranteed.
+          </p>
+          <strong>Please check everything carefully before publishing.</strong>
+        </div>
+      </Modal>
     </div>
   );
 }
