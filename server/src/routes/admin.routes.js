@@ -178,8 +178,7 @@ adminRouter.patch(
   wrap((req, res) => {
     const t = db.tags.find((x) => x.id === req.params.id);
     if (!t) throw missing('Tag not found.');
-    if (t.kind === 'system' && req.body.label && req.body.label !== t.label) throw bad('System evidence tags cannot be renamed.');
-    if (t.kind === 'system' && req.body.archived) throw bad('System evidence tags cannot be archived.');
+    if (t.kind === 'system') throw bad('System evidence tags cannot be modified.');
     for (const key of ['label', 'color', 'description', 'archived']) if (req.body[key] !== undefined) t[key] = req.body[key];
     audit(req.user, 'tag.update', `Updated tag ${t.label}`);
     save();

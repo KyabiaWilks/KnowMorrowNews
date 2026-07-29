@@ -4,6 +4,21 @@ import { config } from './config.js';
 
 const { Pool } = pg;
 
+const SYSTEM_EVIDENCE_TAGS = [
+  {
+    id: 'tag_evidence_detailed',
+    label: 'Detailed evidence',
+    color: '#b56a3c',
+    description: 'The listing includes detailed supporting evidence.',
+  },
+  {
+    id: 'tag_evidence_none',
+    label: 'No detailed evidence',
+    color: '#8a7568',
+    description: 'The listing does not include detailed supporting evidence.',
+  },
+];
+
 const EMPTY = {
   meta: { version: 1, seededAt: null },
   users: [],
@@ -24,6 +39,47 @@ const EMPTY = {
   auditLog: [],
   notifications: [],
 };
+
+function ensureSystemEvidenceTags(state) {
+  const aliases = new Map([
+    ['有详细证据', 'Detailed evidence'],
+    ['没有详细证据', 'No detailed evidence'],
+    ['Detailed evidence', 'Detailed evidence'],
+    ['No detailed evidence', 'No detailed evidence'],
+  ]);
+  let changed = false;
+
+  for (const collection of [state.offers, state.requests]) {
+    for (const item of collection) {
+      if (!Array.isArray(item.tags)) continue;
+      const migrated = [...new Set(item.tags.map((tag) => aliases.get(tag) || tag))];
+      if (JSON.stringify(migrated) !== JSON.stringify(item.tags)) {
+        item.tags = migrated;
+        changed = true;
+      }
+    }
+  }
+
+  const existingTags = Array.isArray(state.tags) ? state.tags : [];
+  const regularTags = existingTags.filter((tag) => !aliases.has(tag.label));
+  const canonicalTags = SYSTEM_EVIDENCE_TAGS.map((definition) => {
+    const previous = existingTags.find((tag) => aliases.get(tag.label) === definition.label);
+    return {
+      ...previous,
+      ...definition,
+      kind: 'system',
+      createdBy: null,
+      archived: false,
+      createdAt: previous?.createdAt || new Date().toISOString(),
+    };
+  });
+  const nextTags = [...canonicalTags, ...regularTags];
+  if (JSON.stringify(nextTags) !== JSON.stringify(existingTags)) {
+    state.tags = nextTags;
+    changed = true;
+  }
+  return changed;
+}
 
 if (!config.databaseUrl) {
   throw new Error('DATABASE_URL is required. Configure PostgreSQL before starting the API.');
@@ -55,6 +111,7 @@ async function initialize() {
         migrated = true;
       }
     }
+    if (ensureSystemEvidenceTags(loaded)) migrated = true;
     if (migrated) {
       await pool.query('UPDATE app_state SET payload = $1::jsonb, updated_at = now() WHERE id = 1', [JSON.stringify(loaded)]);
       console.log('[db] Migrated Discord user IDs to full Discord usernames.');
@@ -72,6 +129,7 @@ async function initialize() {
     }
   }
 
+  ensureSystemEvidenceTags(initial);
   await pool.query(
     `INSERT INTO app_state (id, payload)
      VALUES (1, $1::jsonb)

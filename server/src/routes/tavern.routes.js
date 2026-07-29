@@ -21,10 +21,10 @@ import { notify } from '../notifications.js';
 export const tavernRouter = Router();
 
 /** 每条情报必须声明证据等级，这两个标签由系统锁定 */
-export const EVIDENCE_TAGS = ['有详细证据', '没有详细证据'];
+export const EVIDENCE_TAGS = ['Detailed evidence', 'No detailed evidence'];
 const MAX_PROFILES = 6;
 const TAG_EN = { '有详细证据': 'Detailed evidence', '没有详细证据': 'No detailed evidence', '军事': 'Military', '外交': 'Diplomacy', '能源': 'Energy', '内部人事': 'Internal affairs', '卫星影像': 'Satellite imagery', '时效性强': 'Time-sensitive', '高风险': 'High risk', '经济': 'Economy', '基础设施情报': 'Infrastructure' };
-const TAG_SOURCE = Object.fromEntries(Object.entries(TAG_EN).map(([source, english]) => [english, source]));
+const TAG_SOURCE = {};
 
 const isAdminUser = (user) => ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(user?.siteRole) || user?.role === 'admin';
 const isBlocked = (listing, user) => !!user && !isAdminUser(user) && (listing.blockedUserIds || []).includes(user.id);
@@ -92,7 +92,7 @@ tavernRouter.get(
     for (const r of db.requests) for (const t of r.tags || []) usage[t] = (usage[t] || 0) + 1;
     res.json({
       tags: db.tags
-        .filter((t) => !t.archived)
+        .filter((t) => !t.archived && t.kind !== 'system')
         .map((t) => ({ ...t, label: TAG_EN[t.label] || t.label, description: TAG_EN[t.label] ? '' : t.description, usage: usage[t.label] || 0 }))
         .sort((a, b) => Number(b.kind === 'system') - Number(a.kind === 'system') || (b.usage || 0) - (a.usage || 0)),
       evidenceTags: EVIDENCE_TAGS.map((tag) => TAG_EN[tag] || tag),
@@ -105,9 +105,13 @@ tavernRouter.post(
   '/tags',
   requireAuth,
   wrap((req, res) => {
-    const label = String(req.body.label || '').trim().slice(0, 16);
-    if (label.length < 1) throw bad('Tag name cannot be empty.');
-    const exists = db.tags.find((t) => t.label === label);
+    const requestedLabel = String(req.body.label || '').trim();
+    if (requestedLabel.length < 1) throw bad('Tag name cannot be empty.');
+    if (EVIDENCE_TAGS.some((tag) => tag.toLowerCase() === requestedLabel.toLowerCase())) {
+      throw bad('Evidence declarations are protected system tags and cannot be added as additional tags.');
+    }
+    const label = requestedLabel.slice(0, 16);
+    const exists = db.tags.find((t) => t.label.toLowerCase() === label.toLowerCase());
     if (exists) {
       if (exists.archived) throw bad('This tag has been archived by an administrator.');
       return res.json({ tag: exists, existed: true });

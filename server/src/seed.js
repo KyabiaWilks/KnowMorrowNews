@@ -4,6 +4,29 @@ import { hashPassword } from './auth.js';
 
 const now = () => new Date().toISOString();
 
+const SYSTEM_EVIDENCE_TAGS = [
+  {
+    id: 'tag_evidence_detailed',
+    label: 'Detailed evidence',
+    kind: 'system',
+    color: '#b56a3c',
+    description: 'The listing includes detailed supporting evidence.',
+    createdBy: null,
+    archived: false,
+    createdAt: now(),
+  },
+  {
+    id: 'tag_evidence_none',
+    label: 'No detailed evidence',
+    kind: 'system',
+    color: '#8a7568',
+    description: 'The listing does not include detailed supporting evidence.',
+    createdBy: null,
+    archived: false,
+    createdAt: now(),
+  },
+];
+
 const TEST_ACCOUNTS = [
   {
     id: 'tavern_user',
@@ -114,7 +137,7 @@ export async function seedDatabase() {
     profiles: [],
     news,
     journalists,
-    tags: [],
+    tags: structuredClone(SYSTEM_EVIDENCE_TAGS),
     offers: [],
     requests: [],
     purchases: [],
