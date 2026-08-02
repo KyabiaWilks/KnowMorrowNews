@@ -58,6 +58,7 @@ export default function TavernPage() {
   const { user } = useAuth();
   const [mode, setMode] = useState<Mode>('offers');
   const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [tag, setTag] = useState('');
   const [evidence, setEvidence] = useState('');
   const [sort, setSort] = useState('new');
@@ -70,16 +71,16 @@ export default function TavernPage() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setOffers(null);
-      setRequests(null);
-      void Promise.all([
-        get<{ items: Offer[] }>(`/tavern/offers${qs({ q, tag, evidence, sort, pageSize: 30 })}`).then((result) => setOffers(result.items)),
-        get<{ items: BountyRequest[] }>(`/tavern/requests${qs({ q, tag, pageSize: 30 })}`).then((result) => setRequests(result.items)),
-      ]);
-    }, 220);
+    const timer = window.setTimeout(() => setDebouncedQ(q), 220);
     return () => window.clearTimeout(timer);
-  }, [q, tag, evidence, sort]);
+  }, [q]);
+
+  useEffect(() => {
+    void Promise.all([
+      get<{ items: Offer[] }>(`/tavern/offers${qs({ q: debouncedQ, tag, evidence, sort, pageSize: 30 })}`).then((result) => setOffers(result.items)),
+      get<{ items: BountyRequest[] }>(`/tavern/requests${qs({ q: debouncedQ, tag, pageSize: 30 })}`).then((result) => setRequests(result.items)),
+    ]);
+  }, [debouncedQ, tag, evidence, sort]);
 
   return (
     <div className="tavern stack" style={{ gap: 20 }}>
