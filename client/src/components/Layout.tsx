@@ -10,7 +10,6 @@ const NAV = [
   { to: '/', label: 'Front Page', end: true },
   { to: '/news', label: 'News' },
   { to: '/journalists', label: 'Contributors' },
-  { to: '/events/leadership-2026', label: 'Leadership Vote' },
   { to: '/tavern', label: 'The Tavern' },
   { to: '/desk', label: 'My Desk' },
 ];
