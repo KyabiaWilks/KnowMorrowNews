@@ -720,7 +720,7 @@ button.chip:hover {
 
 .tomato-layer {
   position: absolute;
-  inset: 0;
+  inset: var(--header-h) 0 0;
   pointer-events: none;
   z-index: 40;
   overflow: hidden;
