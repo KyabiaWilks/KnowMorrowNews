@@ -6,6 +6,7 @@ import { debit, profileById } from '../services.js';
 import { bad, missing, now, uid, wrap, HttpError } from '../util.js';
 
 export const tomatoRouter = Router();
+const DISPLAY_LIMIT = 72;
 const pickTomatoVariant = () => {
   const roll = Math.random();
   if (roll < 0.005) return 'tmt5';
@@ -24,14 +25,22 @@ const shape = (tomato) => ({
 tomatoRouter.get('/', wrap((req, res) => {
   const page = String(req.query.page || '/');
   const privatePage = isPrivatePage(page);
-  const items = db.tomatoes.filter((tomato) =>
+  const eligible = db.tomatoes.filter((tomato) =>
     !tomato.hidden
     && (page === '*' || tomato.page === page)
     && (!privatePage || (!!req.user && tomato.userId === req.user.id))
-  )
-    .slice(0, 400)
+  );
+  const withNotes = eligible
+    .filter((tomato) => String(tomato.note || '').trim())
+    .sort((a, b) => b.note.trim().length - a.note.trim().length || b.createdAt.localeCompare(a.createdAt));
+  const withoutNotes = eligible
+    .filter((tomato) => !String(tomato.note || '').trim())
+    .map((tomato) => ({ tomato, random: Math.random() }))
+    .sort((a, b) => a.random - b.random)
+    .map((item) => item.tomato);
+  const items = [...withNotes.slice(0, DISPLAY_LIMIT), ...withoutNotes.slice(0, Math.max(0, DISPLAY_LIMIT - withNotes.length))]
     .map((tomato) => ({ ...shape(tomato), mine: !!req.user && tomato.userId === req.user.id }));
-  res.json({ items, price: config.tomatoPrice });
+  res.json({ items, total: eligible.length, displayLimit: DISPLAY_LIMIT, price: config.tomatoPrice });
 }));
 
 tomatoRouter.post('/', requireAuth, wrap((req, res) => {
@@ -54,6 +63,11 @@ tomatoRouter.post('/', requireAuth, wrap((req, res) => {
     splat: pickTomatoVariant(), note, alias,
     userId: req.user.id, profileId: req.body.profileId || null, hidden: false, createdAt: now(),
   };
+  const eventMatch = /^\/events\/([^/]+)$/.exec(page);
+  if (eventMatch && ['leadership-2026'].includes(eventMatch[1])) {
+    tomato.voteEventId = eventMatch[1];
+    tomato.voteCandidateId = x < 50 ? 'left' : 'right';
+  }
   db.tomatoes.unshift(tomato);
   save();
   res.json({ tomato: { ...shape(tomato), mine: true }, wallet: { coins: req.user.coins } });

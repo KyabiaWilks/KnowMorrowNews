@@ -15,6 +15,7 @@ import { uploadRouter } from './routes/upload.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { ghostRouter } from './routes/ghost.routes.js';
 import { notificationsRouter } from './routes/notifications.routes.js';
+import { eventsRouter } from './routes/events.routes.js';
 import { startNotificationScheduler, stopNotificationScheduler } from './notifications.js';
 
 if (isEmpty()) {
@@ -43,6 +44,7 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/ghost', ghostRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/events', eventsRouter);
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not Found' }));
 

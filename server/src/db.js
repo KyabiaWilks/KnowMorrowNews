@@ -35,6 +35,7 @@ const EMPTY = {
   arbitrations: [],
   arbitrationJudgments: [],
   tomatoes: [],
+  eventVotes: [],
   transactions: [],
   auditLog: [],
   notifications: [],

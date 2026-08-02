@@ -1622,6 +1622,7 @@ button.chip:hover {
 }
 
 @media (max-width: 700px) {
+  .tomato-layer .tomato:nth-child(n+37) { display: none; }
   .tavern-rules {
     gap: 14px;
   }
@@ -2967,6 +2968,38 @@ main.page.page--tavern > .tavern {
 }
 
 /* Final radius normalization for components declared after the responsive blocks above. */
+.vote-event { gap: 18px; }
+.vote-event__head { text-align: center; max-width: 780px; margin: 0 auto; }
+.vote-event__head h1 { margin: 8px 0; font-size: clamp(36px, 7vw, 76px); }
+.vote-event__head p { color: var(--muted); font-size: 18px; }
+.vote-event__instruction { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff8df; color: #684b19; }
+.vote-event__arena { display: grid; grid-template-columns: 1fr 1fr; min-height: 660px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); }
+.vote-candidate { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.vote-candidate--left { background: linear-gradient(150deg, #eaf2f8, #b9ccdd); }
+.vote-candidate--right { background: linear-gradient(210deg, #f4ece4, #d7baa5); border-left: 1px solid rgba(40, 30, 20, .18); }
+.vote-candidate__side { position: absolute; top: 16px; z-index: 1; padding: 7px 10px; background: rgba(8, 20, 34, .78); color: #fff; font: 700 11px/1 var(--mono); letter-spacing: .12em; }
+.vote-candidate--left .vote-candidate__side { left: 16px; }
+.vote-candidate--right .vote-candidate__side { right: 16px; }
+.vote-candidate img { width: 100%; height: 360px; object-fit: cover; object-position: center 25%; }
+.vote-candidate__body { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 14px; padding: 26px; text-align: center; }
+.vote-candidate__body h2 { margin: 0; font-size: clamp(27px, 4vw, 42px); }
+.vote-candidate dl { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin: 0; }
+.vote-candidate dl div { padding: 8px; }
+.vote-candidate dt { color: var(--muted); font: 700 10px/1.4 var(--mono); text-transform: uppercase; }
+.vote-candidate dd { margin: 4px 0 0; font-weight: 700; }
+.vote-candidate blockquote { min-height: 48px; margin: 0; font: italic 19px/1.45 var(--serif); }
+.vote-candidate__score { margin-top: auto; }
+.vote-candidate__score strong { display: block; font: 800 40px/1 var(--serif); }
+.vote-candidate__score span { color: var(--muted); }
+.vote-event__ballot { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+@media (max-width: 700px) {
+  .vote-event__instruction { align-items: flex-start; text-align: left; }
+  .vote-event__arena { grid-template-columns: 1fr; }
+  .vote-candidate--right { border-left: 0; border-top: 1px solid rgba(40, 30, 20, .18); }
+  .vote-candidate img { height: 300px; }
+  .vote-event__ballot { align-items: stretch; flex-direction: column; }
+}
+
 :where(.card, .modal, .hero, .btn, .chip, .coin-pill, .nav a, .admin-nav a, .admin-language, .admin-language button, .input, .select, .textarea, .recipient-results, .recipient-selected, .tier, .tomato-fab, .tomato-hud, .tomato__note, .notice-banner, .toast, .cookie-consent, .cookie-preferences, .journalist-flip, .journalist-flip__face, .km-login__discord) {
   border-radius: var(--radius) !important;
 }
