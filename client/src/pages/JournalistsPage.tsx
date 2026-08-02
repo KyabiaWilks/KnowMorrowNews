@@ -29,7 +29,7 @@ export default function JournalistsPage() {
       </div>
     </Link>)}</div>}
     <div className="divider" />
-    <nav className="stack" aria-label="Contributor honors">
+    <nav className="contributor-honor-nav" aria-label="Contributor honors">
       <Link className="card card--pad card--hover row row--between" to="/journalists/hall-of-fame"><div><div className="eyebrow">HALL OF FAME</div><h2>Stars of Know Morrow</h2></div><span className="btn btn--sm">Enter →</span></Link>
       <Link className="card card--pad card--hover row row--between" to="/journalists/friends"><div><div className="eyebrow">FRIENDS OF THE PAPER</div><h2>Outstanding contributors</h2></div><span className="btn btn--sm">Enter →</span></Link>
       <Link className="card card--pad card--hover row row--between" to="/journalists/memorial"><div><div className="eyebrow">MEMORIAL HALL</div><h2>Players who have departed</h2></div><span className="btn btn--sm">Enter →</span></Link>

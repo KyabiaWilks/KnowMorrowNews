@@ -2969,6 +2969,12 @@ main.page.page--tavern > .tavern {
 
 /* Final radius normalization for components declared after the responsive blocks above. */
 .vote-event { gap: 18px; }
+.contributor-honor-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.contributor-honor-nav > a { min-width: 0; align-items: flex-end; }
+.contributor-honor-nav h2 { margin-top: 6px; font-size: clamp(18px, 2vw, 24px); }
+@media (max-width: 760px) {
+  .contributor-honor-nav { grid-template-columns: 1fr; }
+}
 .vote-event__head { text-align: center; max-width: 780px; margin: 0 auto; }
 .vote-event__head h1 { margin: 8px 0; font-size: clamp(36px, 7vw, 76px); }
 .vote-event__head p { color: var(--muted); font-size: 18px; }
