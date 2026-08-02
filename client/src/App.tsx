@@ -27,6 +27,7 @@ import NewsDeskPage from './pages/NewsDeskPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LeadershipVotePage from './pages/LeadershipVotePage';
+import ContributorHonorsPage from './pages/ContributorHonorsPage';
 
 function RequireAuth({ children, admin, editorial }: { children: JSX.Element; admin?: boolean; editorial?: boolean }) {
   const { user, loading } = useAuth();
@@ -48,6 +49,9 @@ export default function App() {
           <Route path="news" element={<NewsPage />} />
           <Route path="news/:id" element={<ArticlePage />} />
           <Route path="journalists" element={<JournalistsPage />} />
+          <Route path="journalists/hall-of-fame" element={<ContributorHonorsPage kind="hallOfFame" />} />
+          <Route path="journalists/friends" element={<ContributorHonorsPage kind="friends" />} />
+          <Route path="journalists/memorial" element={<ContributorHonorsPage kind="memorials" />} />
           <Route path="journalists/:id" element={<JournalistPage />} />
           <Route path="events/leadership-2026" element={<LeadershipVotePage />} />
 
