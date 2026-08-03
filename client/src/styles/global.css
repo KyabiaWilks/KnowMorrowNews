@@ -2056,6 +2056,11 @@ button.chip:hover {
   color: #04070c;
   font-weight: 700;
 }
+.ghost-language { display: inline-flex; flex: 0 0 auto; overflow: hidden; border: 1px solid rgba(125,255,196,.32); border-radius: 5px; }
+.ghost-language button { border: 0; padding: 5px 9px; background: transparent; color: rgba(201,255,230,.62); font: 700 10px/1.2 var(--mono); cursor: pointer; }
+.ghost-language button + button { border-left: 1px solid rgba(125,255,196,.22); }
+.ghost-language button.on { background: rgba(125,255,196,.16); color: #7dffc4; }
+.ghost-gate__box > .ghost-language { margin: 0 0 14px auto; }
 
 .ghost input,
 .ghost select {
