@@ -30,6 +30,7 @@ export const config = {
   discordBotToken: process.env.DISCORD_BOT_TOKEN || '',
   discordGuildId: process.env.DISCORD_GUILD_ID || '1528707402319532214',
   supremeDiscordUsername: process.env.SUPREME_DISCORD_USERNAME || 'wisthiulmdar_20786',
+  adDebugDiscordUsernames: (process.env.AD_DEBUG_DISCORD_USERNAMES || `kyabia,${process.env.SUPREME_DISCORD_USERNAME || 'wisthiulmdar_20786'}`).split(',').map((value) => value.trim().toLowerCase()).filter(Boolean),
 };
 
 fs.mkdirSync(config.dataDir, { recursive: true });

@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { save } from '../db.js';
 import { requireAuth } from '../auth.js';
-import { bad, matchText, missing, wrap } from '../util.js';
+import { bad, matchText, missing, now, uid, wrap } from '../util.js';
+import { normalizeReporterBeats, REPORTER_BEATS } from '../reporterBeats.js';
+import { minecraftAvatar } from '../journalistProfiles.js';
 
 export const journalistsRouter = Router();
 
@@ -23,11 +25,12 @@ const STORY_EN = {
 
 const card = (j) => {
   j = englishJournalist(j);
+  const linkedUser = db.users.find((user) => user.id === j.userId);
   return ({
   id: j.id,
   name: j.name,
   title: j.title,
-  avatar: j.avatar,
+  avatar: minecraftAvatar(j) || j.cardAvatar || linkedUser?.discordAvatar || j.avatar || null,
   portraitTone: j.portraitTone,
   beats: j.beats,
   tagline: j.tagline,
@@ -37,6 +40,8 @@ const card = (j) => {
   featured: !!j.featured,
   });
 };
+
+const ignOf = (journalist) => journalist.ign || db.users.find((user) => user.id === journalist.userId)?.minecraftId || null;
 
 journalistsRouter.get(
   '/',
@@ -48,22 +53,36 @@ journalistsRouter.get(
       return matchText(q, item.name, item.title, item.tagline, item.bio, ...(item.beats || []), ...(item.awards || []).map((a) => a.name));
     });
     if (beat && beat !== 'all') items = items.filter((j) => (englishJournalist(j).beats || []).includes(String(beat)));
-    const beats = [...new Set(db.journalists.flatMap((j) => englishJournalist(j).beats || []))];
+    const beats = REPORTER_BEATS;
     res.json({
       items: items.sort((a, b) => Number(!!b.featured) - Number(!!a.featured) || a.name.localeCompare(b.name)).map(card),
       beats,
       honors: {
         hallOfFame: db.journalists.filter((j) => !j.hidden && j.featured).map(card),
-        friends: db.journalists.filter((j) => !j.hidden && !j.featured).map(card),
+        friends: (db.contributors || []).map((contributor) => {
+          const user = contributor.username
+            ? db.users.find((item) => item.username?.toLowerCase() === contributor.username.toLowerCase())
+            : null;
+          return {
+            id: contributor.id,
+            name: contributor.name,
+            username: contributor.username,
+            title: contributor.title,
+            contribution: contributor.contribution,
+            avatar: user?.discordAvatar || contributor.avatar || null,
+            registered: !!user,
+            initialTmt: contributor.initialTmt || 0,
+          };
+        }),
         memorials: db.users
-          .filter((user) => user.departedAt)
-          .sort((a, b) => b.departedAt.localeCompare(a.departedAt))
+          .filter((user) => user.departedAt || user.memorializedAt)
+          .sort((a, b) => (b.departedAt || b.memorializedAt).localeCompare(a.departedAt || a.memorializedAt))
           .map((user) => ({
             id: user.id,
             name: user.displayName,
             minecraftId: user.minecraftId || null,
             avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
-            departedAt: user.departedAt,
+            departedAt: user.departedAt || user.memorializedAt,
           })),
       },
     });
@@ -82,9 +101,9 @@ journalistsRouter.patch('/me/profile', requireAuth, wrap((req, res) => {
   }
   const journalist = db.journalists.find((item) => item.userId === req.user.id);
   if (!journalist) throw missing('No reporter profile is linked to this account.');
-  const textLimits = { name: 48, title: 80, tagline: 180, bio: 1600, contact: 120, avatar: 500 };
+  const textLimits = { name: 48, title: 80, tagline: 180, bio: 1600, contact: 120, avatar: 500, cardAvatar: 500 };
   for (const [field, limit] of Object.entries(textLimits)) {
-    if (req.body[field] !== undefined) journalist[field] = String(req.body[field] || '').trim().slice(0, limit) || (field === 'contact' || field === 'avatar' ? null : journalist[field]);
+    if (req.body[field] !== undefined) journalist[field] = String(req.body[field] || '').trim().slice(0, limit) || (['contact', 'avatar', 'cardAvatar'].includes(field) ? null : journalist[field]);
   }
   if (req.body.portraitTone !== undefined) {
     const color = String(req.body.portraitTone);
@@ -92,11 +111,31 @@ journalistsRouter.patch('/me/profile', requireAuth, wrap((req, res) => {
     journalist.portraitTone = color;
   }
   if (req.body.beats !== undefined) {
-    const beats = Array.isArray(req.body.beats) ? req.body.beats : String(req.body.beats).split(',');
-    journalist.beats = beats.map((item) => String(item).trim().slice(0, 40)).filter(Boolean).slice(0, 8);
+    journalist.beats = normalizeReporterBeats(req.body.beats, journalist.id);
   }
   save();
   res.json({ journalist: englishJournalist(journalist) });
+}));
+
+journalistsRouter.post('/:id/ign-copy', requireAuth, wrap((req, res) => {
+  const journalist = db.journalists.find((item) => item.id === req.params.id && !item.hidden);
+  if (!journalist) throw missing('Reporter not found.');
+  const ign = ignOf(journalist);
+  if (!ign) throw missing('This reporter does not have a public IGN.');
+  db.auditLog.unshift({
+    id: uid('log'),
+    actorId: req.user.id,
+    actorName: req.user.username,
+    action: 'journalist.ign_copy',
+    targetJournalistId: journalist.id,
+    targetJournalistName: journalist.name,
+    targetIgn: ign,
+    page: `/journalists/${journalist.id}`,
+    createdAt: now(),
+  });
+  db.auditLog.length = Math.min(db.auditLog.length, 500);
+  save();
+  res.json({ ok: true });
 }));
 
 journalistsRouter.get(
@@ -108,7 +147,7 @@ journalistsRouter.get(
     const stories = db.news
       .filter((a) => a.status === 'published' && (a.authorIds || []).includes(j.id))
       .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
-      .map((a) => ({ id: a.id, title: STORY_EN[a.id]?.[0] || a.title, summary: STORY_EN[a.id]?.[1] || a.summary, publishedAt: a.publishedAt, views: a.views ?? 0, section: STORY_EN[a.id]?.[2] || a.section }));
+      .map((a) => ({ id: a.id, slug: a.slug, title: STORY_EN[a.id]?.[0] || a.title, summary: STORY_EN[a.id]?.[1] || a.summary, publishedAt: a.publishedAt, views: a.views ?? 0, section: STORY_EN[a.id]?.[2] || a.section }));
 
     res.json({
       journalist: {
@@ -118,10 +157,19 @@ journalistsRouter.get(
         milestones: j.milestones || [],
         signatureWorks: (j.signatureWorks || []).map((w) => ({
           ...w,
-          article: db.news.find((a) => a.id === w.newsId) ? { id: w.newsId, title: STORY_EN[w.newsId]?.[0] || db.news.find((a) => a.id === w.newsId).title } : null,
+          article: db.news.find((a) => a.id === w.newsId) ? { id: w.newsId, slug: db.news.find((a) => a.id === w.newsId).slug, title: STORY_EN[w.newsId]?.[0] || db.news.find((a) => a.id === w.newsId).title } : null,
         })),
         contact: j.contact || null,
-        avatar: j.avatar || null,
+        ign: ignOf(j),
+        pronouns: j.pronouns || null,
+        aliases: j.aliases || [],
+        affiliations: j.affiliations || [],
+        funFact: j.funFact || null,
+        imageCredit: j.imageCredit || null,
+        gallery: j.gallery || [],
+        avatar: minecraftAvatar(j) || j.avatar || null,
+        cardAvatar: j.cardAvatar || null,
+        discordAvatar: db.users.find((user) => user.id === j.userId)?.discordAvatar || null,
         canEdit: !!req.user && j.userId === req.user.id,
         stats: {
           stories: stories.length,

@@ -5,6 +5,8 @@ import { TomatoLayer, TomatoToolbar } from './TomatoLayer';
 import { NotificationBell } from './NotificationBell';
 import { CookieConsent } from './CookieConsent';
 import { TomatoIcon } from './TomatoIcon';
+import { ContributorName } from './ContributorName';
+import { MajorConflictAlert } from './MajorConflictAlert';
 
 const NAV = [
   { to: '/', label: 'Front Page', end: true },
@@ -88,7 +90,7 @@ export function Layout() {
                 <Link to="/wallet" className="coin-pill"><TomatoIcon size={22} /> {user.wallet.coins.toLocaleString('en-US')}</Link>
                 <NotificationBell />
                 <Link to="/profile" className="btn btn--sm">
-                  {user.displayName}
+                  <ContributorName contributor={user.contributor}>{user.displayName}</ContributorName>
                   {user.siteRole !== 'user' && <span className="role-label">{roleLabel(user.siteRole)}</span>}
                 </Link>
                 <button className="btn btn--sm btn--ghost" onClick={signOut}>Sign out</button>
@@ -146,8 +148,8 @@ export function Layout() {
                   {user.avatar ? <img src={user.avatar} alt="" /> : user.displayName.slice(0, 1).toUpperCase()}
                 </div>
                 <div>
-                  <strong>{user.displayName}</strong>
-                  <span>@{user.username}</span>
+                  <strong><ContributorName contributor={user.contributor}>{user.displayName}</ContributorName></strong>
+                  <span><ContributorName contributor={user.contributor}>@{user.username}</ContributorName></span>
                   <span>{roleLabel(user.siteRole)}</span>
                 </div>
               </div>
@@ -168,10 +170,10 @@ export function Layout() {
         </div>
       </aside>
 
-      <main className={location.pathname.startsWith('/tavern') ? 'page page--tavern' : location.pathname === '/news/news_placeholder' ? 'page page--news-paper' : 'page'}><Outlet /></main>
+      <main className={location.pathname.startsWith('/tavern') ? 'page page--tavern' : location.pathname.startsWith('/news/') ? 'page page--news-paper' : 'page'}><Outlet /></main>
       <footer className="footer">
         <div className="footer__inner">
-          <div><strong>Know Morrow News</strong> — Every tale can prove useful. Every story deserves to be told.</div>
+          <div><strong>Know Morrow News</strong> — KETCHUP ON THE LATEST SCOOP!</div>
           <div className="row" style={{ gap: 16 }}>
             <Link to="/tavern/rules">Submission rules</Link>
             <Link to="/tavern/disclosures">Disclosures</Link>
@@ -186,6 +188,7 @@ export function Layout() {
       <TomatoLayer />
       <TomatoToolbar />
       <CookieConsent />
+      {!location.pathname.startsWith('/preview/major-conflict-alert') && <MajorConflictAlert />}
     </div>
   );
 }

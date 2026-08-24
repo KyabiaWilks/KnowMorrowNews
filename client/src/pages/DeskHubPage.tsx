@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function DeskHubPage() {
   const { user } = useAuth();
-  const editorial = user && ['journalist', 'admin', 'read_only_admin'].includes(user.siteRole);
+  const editorial = user && (['journalist', 'admin', 'read_only_admin'].includes(user.siteRole) || !!user.editorialScope);
   return (
     <div className="stack" style={{ gap: 22 }}>
       <div className="page-head">
@@ -23,8 +23,8 @@ export default function DeskHubPage() {
         {editorial && (
           <Link to="/desk/news" className="card card--pad card--hover stack desk-hub__card">
             <div style={{ fontSize: 34 }}>📰</div>
-            <h2>News Desk</h2>
-            <p className="muted">{user?.readOnly ? 'Review published news and drafts in read-only mode.' : 'Write, save and publish reporting to the News section.'}</p>
+            <h2>{user?.editorialScope === 'thegunrat-quotes' ? 'TheGunRat Quotes Desk' : 'News Desk'}</h2>
+            <p className="muted">{user?.readOnly ? 'Review published news and drafts in read-only mode.' : user?.editorialScope === 'thegunrat-quotes' ? 'Write and edit articles for TheGunRat Quotes.' : 'Write, save and publish reporting to the News section.'}</p>
             <span className="btn btn--primary desk-hub__action">Open News Desk →</span>
           </Link>
         )}

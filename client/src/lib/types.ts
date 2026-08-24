@@ -15,8 +15,9 @@ export type User = {
   minecraftId: string | null;
   minecraftUuid: string | null;
   avatar: string | null;
-  discordId: string | null;
   departedAt: string | null;
+  contributor: boolean;
+  editorialScope: 'thegunrat-quotes' | null;
 };
 
 export type Mask = {
@@ -42,25 +43,37 @@ export type NewsItem = {
   section: string;
   tags: string[];
   cover: string | null;
+  visualCredit: string | null;
   authors: string[];
   authorIds: string[];
+  illustratorIds: string[];
+  proofreaderIds: string[];
   publishedAt: string;
   readingMinutes: number;
   views: number;
   tomatoTips: number;
   featured: boolean;
+  important?: boolean;
+  pinned?: boolean;
+  volume: number;
+  issueNumber: number;
+  series?: string | null;
 };
 
 export type Article = NewsItem & {
   body: string;
   dateline: string;
-  authorCards: { id: string; name: string; title: string; beats: string[] }[];
+  openingParagraphCount?: number;
+  media?: { type?: 'image' | 'youtube'; src: string; alt: string; caption?: string; afterParagraph: number }[];
+  dialogueAvatars?: Record<string, string>;
+  contributorCards: { id: string; name: string; title: string; roles: ('Writer' | 'Illustrator' | 'Proofreader')[]; beats: string[]; avatar: string | null; ign: string | null; aliases: string[] }[];
 };
 
 export type JournalistCard = {
   id: string;
   name: string;
   title: string;
+  avatar: string | null;
   portraitTone: string;
   beats: string[];
   tagline: string;
@@ -168,6 +181,7 @@ export type Tomato = {
   alias: string;
   createdAt: string;
   mine: boolean;
+  contributor: boolean;
 };
 
 export type Transaction = { id: string; delta: number; kind: string; memo: string; createdAt: string };

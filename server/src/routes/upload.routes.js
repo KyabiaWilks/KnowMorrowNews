@@ -6,10 +6,15 @@ import multer from 'multer';
 import { config } from '../config.js';
 import { db, save } from '../db.js';
 import { requireAuth } from '../auth.js';
-import { HttpError, bad, now, uid, wrap } from '../util.js';
+import { HttpError, bad, missing, now, uid, wrap } from '../util.js';
 import { hasUnlocked, userOfProfile } from '../services.js';
 
 export const uploadRouter = Router();
+
+const IMAGE_MIMES = new Map([
+  ['.jpg', 'image/jpeg'], ['.jpeg', 'image/jpeg'], ['.png', 'image/png'],
+  ['.webp', 'image/webp'], ['.gif', 'image/gif'], ['.avif', 'image/avif'],
+]);
 
 function canAccessEvidence(user, evidence) {
   if (evidence.uploaderId === user.id) return true;
@@ -75,6 +80,16 @@ const upload = multer({
   },
 });
 
+const imageUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (IMAGE_MIMES.get(ext) !== file.mimetype.toLowerCase()) return cb(new HttpError(400, 'Upload a JPG, PNG, WebP, GIF, or AVIF image.'));
+    cb(null, true);
+  },
+});
+
 function signatureMatches(file) {
   const bytes = fs.readFileSync(file.path);
   const ascii = (start, end) => bytes.subarray(start, end).toString('ascii');
@@ -92,6 +107,29 @@ function signatureMatches(file) {
   }
   return false;
 }
+
+uploadRouter.get('/media/:filename', wrap((req, res) => {
+  const filename = String(req.params.filename || '');
+  if (!/^\d+-[a-f0-9]{12}\.(?:jpe?g|png|webp|gif|avif)$/i.test(filename)) throw missing('Image not found.');
+  const filepath = path.resolve(config.uploadDir, filename);
+  if (!fs.existsSync(filepath)) throw missing('Image not found.');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.sendFile(filepath);
+}));
+
+uploadRouter.post('/image', requireAuth, imageUpload.single('file'), wrap((req, res) => {
+  const allowed = req.user.siteRole === 'journalist' || ['admin', 'superadmin'].includes(req.user.siteRole) || req.user.role === 'admin' || String(req.user.username || '').toLowerCase() === 'thegunrat';
+  if (!allowed) {
+    if (req.file) fs.rmSync(req.file.path, { force: true });
+    throw bad('Reporter or administrator access required.');
+  }
+  if (!req.file || !signatureMatches(req.file)) {
+    if (req.file) fs.rmSync(req.file.path, { force: true });
+    throw bad('The uploaded image does not match its declared file type.');
+  }
+  res.json({ url: `/api/upload/media/${req.file.filename}` });
+}));
 
 /** 证据文件。文件名被随机化，URL 不可枚举，只有解锁者拿得到。 */
 uploadRouter.post(

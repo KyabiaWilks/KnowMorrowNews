@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { AdvertisementSlot } from '../components/AdvertisementSlot';
 
 const beats = [
   ['💥', 'Scandals, gossip & drama', 'The messier the paper trail, the better the front page.'],
@@ -23,6 +24,7 @@ export default function HomePage() {
         </div>
         <div className="km-hero__art"><img src="/know-morrow-mark.webp" alt="A rising white moon beneath an arc of light" /><span>KETCHUP ON THE LATEST SCOOP!</span></div>
       </section>
+      <AdvertisementSlot placement="home" />
       <section className="km-manifesto">
         <div className="km-section-number">01</div>
         <div><div className="km-kicker">TO OUR READERS &amp; CONTRIBUTORS</div><h2>The devil lives in the details.</h2><p>Welcome to Know Morrow Newspaper. In this house, we reject the great man theory. History is built from a thousand small choices, glorious mistakes and half-heard rumors. Every tale can prove useful to someone, and every story deserves to be told.</p></div>

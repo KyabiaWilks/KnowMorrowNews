@@ -28,13 +28,15 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LeadershipVotePage from './pages/LeadershipVotePage';
 import ContributorHonorsPage from './pages/ContributorHonorsPage';
+import MajorConflictPreview from './pages/admin/MajorConflictPreview';
+import TheGunRatQuotesPage from './pages/TheGunRatQuotesPage';
 
 function RequireAuth({ children, admin, editorial }: { children: JSX.Element; admin?: boolean; editorial?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (admin && !['admin', 'read_only_admin'].includes(user.siteRole)) return <Navigate to="/" replace />;
-  if (editorial && !['journalist', 'admin', 'read_only_admin'].includes(user.siteRole)) return <Navigate to="/desk" replace />;
+  if (editorial && !['journalist', 'admin', 'read_only_admin'].includes(user.siteRole) && !user.editorialScope) return <Navigate to="/desk" replace />;
   return children;
 }
 
@@ -43,11 +45,13 @@ export default function App() {
     <ErrorBoundary>
       <Routes>
         <Route path="/ghost/*" element={<GhostPage />} />
+        <Route path="/preview/major-conflict-alert" element={<MajorConflictPreview />} />
 
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="news" element={<NewsPage />} />
           <Route path="news/:id" element={<ArticlePage />} />
+          <Route path="thegunrat-quotes" element={<TheGunRatQuotesPage />} />
           <Route path="journalists" element={<JournalistsPage />} />
           <Route path="journalists/hall-of-fame" element={<ContributorHonorsPage kind="hallOfFame" />} />
           <Route path="journalists/friends" element={<ContributorHonorsPage kind="friends" />} />

@@ -1,4 +1,13 @@
+{
+	servers :443 {
+		protocols h1 h2
+	}
+}
+
 {$DOMAIN} {
 	encode zstd gzip
-	reverse_proxy web:80
+	reverse_proxy web:80 {
+		lb_try_duration 5s
+		lb_try_interval 250ms
+	}
 }

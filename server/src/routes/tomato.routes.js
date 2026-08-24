@@ -20,6 +20,10 @@ const shape = (tomato) => ({
   id: tomato.id, page: tomato.page, x: tomato.x, y: tomato.y, rot: tomato.rot,
   scale: tomato.scale, splat: tomato.splat, note: tomato.note, alias: tomato.alias,
   createdAt: tomato.createdAt, mine: false,
+  contributor: !tomato.profileId && (db.contributors || []).some((item) => {
+    const user = db.users.find((candidate) => candidate.id === tomato.userId);
+    return item.username?.toLowerCase() === user?.username?.toLowerCase();
+  }),
 });
 
 tomatoRouter.get('/', wrap((req, res) => {
@@ -56,7 +60,9 @@ tomatoRouter.post('/', requireAuth, wrap((req, res) => {
     if (!profile || profile.userId !== req.user.id) throw new HttpError(403, 'That identity does not belong to you.');
     alias = `${profile.sigil} ${profile.alias}`;
   }
-  debit(req.user, config.tomatoPrice, 'tomato_throw', `Threw a tomato on ${page}`, { type: 'page', id: page });
+  if (config.tomatoPrice > 0) {
+    debit(req.user, config.tomatoPrice, 'tomato_throw', `Threw a tomato on ${page}`, { type: 'page', id: page });
+  }
   const tomato = {
     id: uid('tmt'), page, x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100,
     rot: Math.round(Math.random() * 360), scale: .8 + Math.random() * .6,

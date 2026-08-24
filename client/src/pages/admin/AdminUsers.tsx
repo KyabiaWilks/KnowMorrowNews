@@ -7,7 +7,7 @@ import { fmtDate, tmt } from '../../lib/format';
 import { useAuth } from '../../context/AuthContext';
 import { useAdminLanguage } from './AdminLanguage';
 
-type Row = { id: string; username: string; displayName: string; siteRole: User['siteRole']; banned: boolean; createdAt: string; wallet: Wallet; frozenFunds: number; identityDisclosed: boolean; profiles: { id: string; alias: string; retired: boolean }[] };
+type Row = { id: string; username: string; displayName: string; discordId: string | null; audience: { island: string | null; nation: string | null; minecraftIgn: string | null }[]; siteRole: User['siteRole']; banned: boolean; createdAt: string; wallet: Wallet; frozenFunds: number; identityDisclosed: boolean; profiles: { id: string; alias: string; retired: boolean }[] };
 
 export default function AdminUsers() {
   const { t } = useAdminLanguage();
@@ -35,7 +35,7 @@ export default function AdminUsers() {
     {readOnly && <div className="notice-banner">{t('Your administrative access is read-only.', '你的管理权限为只读。')}</div>}
     <div className="card card--pad admin-table-scroll"><table className="table"><thead><tr><th>{t('Account', '账号')}</th><th>{t('Disclosure', '披露状态')}</th><th>{t('Wallet', '钱包')}</th><th>{t('Joined', '加入时间')}</th><th>{t('Status', '状态')}</th><th>{t('Role', '身份')}</th><th /></tr></thead><tbody>
       {filtered.map((row) => <tr key={row.id}>
-        <td><strong>{row.username}</strong><div className="muted">{row.displayName}</div></td>
+        <td><strong>{row.username}</strong><div className="muted">{row.displayName}</div>{row.discordId && <div className="mono muted">Discord: {row.discordId}</div>}{row.audience.map((item, index) => <div className="muted" key={`${row.id}-${index}`}>{[item.minecraftIgn, item.island, item.nation].filter(Boolean).join(' · ')}</div>)}</td>
         <td>{row.identityDisclosed ? <div className="row"><span className="chip chip--danger">{t('Publicly disclosed', '已公开披露')}</span>{row.profiles.map((profile) => <span className="chip" key={profile.id}>{profile.alias}</span>)}</div> : <span className="muted">{t('Private', '保密')}</span>}</td>
         <td className="mono">{tmt(row.wallet.coins)}{row.wallet.escrow > 0 && <div className="muted">{t('Escrow', '托管')} {row.wallet.escrow}</div>}{row.frozenFunds > 0 && <div style={{ color: 'var(--bad)' }}>{t('Frozen', '冻结')} {row.frozenFunds}</div>}</td>
         <td>{fmtDate(row.createdAt)}</td><td>{row.banned ? <span className="chip chip--danger">{t('Suspended', '已封禁')}</span> : <span className="chip chip--good">{t('Active', '正常')}</span>}</td>

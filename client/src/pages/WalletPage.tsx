@@ -6,6 +6,7 @@ import { fmtTime, tmt } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { RecipientSearch, type RecipientMatch } from '../components/RecipientSearch';
+import { TomatoIcon } from '../components/TomatoIcon';
 
 const KIND_LABEL: Record<string, string> = {
   grant: 'Grant',
@@ -88,6 +89,23 @@ export default function WalletPage() {
       <Stat value={data.wallet.escrow.toLocaleString('en-US')} label="In escrow" />
       <Stat value={data.wallet.frozen.toLocaleString('en-US')} label="Frozen by arbitration" />
     </div>
+
+    <aside className="wallet-rate-notice" aria-label="Gold to TMT exchange rate notice">
+      <div className="wallet-rate-notice__rate">
+        <span className="wallet-rate-notice__asset">
+          <img className="minecraft-gold-ingot" src="/gold-ingot.png" alt="Minecraft gold ingot" />
+          <span><strong>1 GOLD</strong><small>Minecraft Gold Ingot</small></span>
+        </span>
+        <b>=</b>
+        <span className="wallet-rate-notice__asset">
+          <TomatoIcon variant={2} size={48} />
+          <span><strong>5 TMT</strong><small>Tomato Coin</small></span>
+        </span>
+      </div>
+      <p>
+        You can buy TMT by handing gold to any KMN journalist, and change TMT to gold in our HQ and branches.
+      </p>
+    </aside>
 
     {data.wallet.frozen > 0 && <div className="notice-banner" style={{ borderColor: 'var(--bad)', background: '#fdecea', color: '#8c2c1d' }}>
       {tmt(data.wallet.frozen)} is frozen by arbitration and cannot be spent until a decision is enforced.

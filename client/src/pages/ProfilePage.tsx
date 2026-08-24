@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { patch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { ContributorName } from '../components/ContributorName';
 
 export default function ProfilePage() {
   const { user, refresh } = useAuth();
@@ -44,12 +45,12 @@ export default function ProfilePage() {
   };
 
   return <div className="stack" style={{ gap: 20 }}>
-    <div className="page-head"><div><div className="eyebrow">ACCOUNT PROFILE</div><h1 className="page-title">{user.displayName}</h1><div className="page-sub">Manage the identities used to recognize you in transfers and Tavern tools.</div></div></div>
+    <div className="page-head"><div><div className="eyebrow">ACCOUNT PROFILE</div><h1 className="page-title"><ContributorName contributor={user.contributor}>{user.displayName}</ContributorName></h1><div className="page-sub">Manage the identities used to recognize you in transfers and Tavern tools.</div></div></div>
     <section className="card card--pad profile-identity">
       <div className="profile-identity__avatar">{user.avatar ? <img src={user.avatar} alt="" /> : user.displayName.slice(0, 1).toUpperCase()}</div>
       <div className="stack" style={{ gap: 5 }}>
-        <strong>{user.displayName}</strong>
-        <span className="mono">@{user.username}</span>
+        <strong><ContributorName contributor={user.contributor}>{user.displayName}</ContributorName></strong>
+        <span className="mono"><ContributorName contributor={user.contributor}>@{user.username}</ContributorName></span>
         <span className="muted">{user.siteRole.replaceAll('_', ' ')}</span>
       </div>
     </section>

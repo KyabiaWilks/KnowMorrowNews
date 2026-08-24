@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { NEWS_TAGS } from '../newsTags.js';
 import { db, save } from '../db.js';
 import { requireAuth } from '../auth.js';
 import { debit } from '../services.js';
 import { bad, matchText, missing, paginate, wrap } from '../util.js';
+import { minecraftAvatar } from '../journalistProfiles.js';
 
 export const newsRouter = Router();
 
@@ -31,6 +33,27 @@ const englishArticle = (article) => ({ ...article, ...(NEWS_EN[article.id] || {}
 const AUTHOR_EN = { jnl_lyra: 'Lyra Shen', jnl_kai: 'Kai Lu', jnl_mira: 'Mira Vance', jnl_ash: 'Ash Cole', jnl_wen: 'Wen Zihan' };
 const AUTHOR_BEATS_EN = { jnl_lyra: ['Conflict', 'Border', 'Humanitarian'], jnl_kai: ['Investigations', 'Energy', 'Data'], jnl_mira: ['Diplomacy', 'Summits', 'Treaties'], jnl_ash: ['Photography', 'Image Verification'], jnl_wen: ['Economy', 'Markets', 'Tokens'] };
 
+const easternPublicationDate = (publishedAt) => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date(publishedAt));
+
+const issueMeta = (article) => {
+  const published = db.news
+    .filter((item) => item.status === 'published')
+    .slice()
+    .sort((left, right) => left.publishedAt.localeCompare(right.publishedAt));
+  const publicationDates = [...new Set(published.map((item) => easternPublicationDate(item.publishedAt)))];
+  const articleDate = easternPublicationDate(article.publishedAt);
+  const sameDay = published.filter((item) => easternPublicationDate(item.publishedAt) === articleDate);
+  return {
+    volume: publicationDates.indexOf(articleDate) + 1,
+    issueNumber: sameDay.findIndex((item) => item.id === article.id) + 1,
+  };
+};
+
 const listItem = (a) => ({
   ...(() => { a = englishArticle(a); return {}; })(),
   id: a.id,
@@ -40,20 +63,31 @@ const listItem = (a) => ({
   section: a.section,
   tags: a.tags,
   cover: a.cover,
+  visualCredit: a.visualCredit || null,
   authorIds: a.authorIds,
+  illustratorIds: a.illustratorIds || [],
+  proofreaderIds: a.proofreaderIds || [],
+  series: a.series || null,
   authors: a.authorIds.map((id) => AUTHOR_EN[id] || db.journalists.find((j) => j.id === id)?.name).filter(Boolean),
   publishedAt: a.publishedAt,
   readingMinutes: a.readingMinutes,
   views: a.views ?? 0,
   tomatoTips: a.tomatoTips ?? 0,
   featured: !!a.featured,
+  important: !!a.important,
+  pinned: !!a.pinned,
+  ...issueMeta(a),
 });
 
 newsRouter.get(
   '/',
   wrap((req, res) => {
-    const { q, section, tag, author, sort = 'new' } = req.query;
+    const { q, section, tag, author, series, sort = 'new' } = req.query;
     let items = db.news.filter((a) => a.status === 'published');
+
+    items = series
+      ? items.filter((a) => a.series === String(series))
+      : items.filter((a) => !a.series);
 
     if (q) {
       items = items.filter((a) => {
@@ -66,6 +100,7 @@ newsRouter.get(
     if (author) items = items.filter((a) => (a.authorIds || []).includes(String(author)));
 
     items = items.slice().sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
       if (sort === 'tomatoes') return (b.tomatoTips ?? 0) - (a.tomatoTips ?? 0);
       if (sort === 'hot') return (b.views ?? 0) - (a.views ?? 0);
       if (sort === 'old') return a.publishedAt.localeCompare(b.publishedAt);
@@ -80,15 +115,13 @@ newsRouter.get(
 newsRouter.get(
   '/facets',
   wrap((_req, res) => {
-    const published = db.news.filter((a) => a.status === 'published');
+    const published = db.news.filter((a) => a.status === 'published' && !a.series);
     const sections = [...new Set([...NEWS_SECTIONS, ...published.map((a) => englishArticle(a).section)])];
     const counts = {};
     for (const a of published) for (const t of englishArticle(a).tags || []) counts[t] = (counts[t] || 0) + 1;
     res.json({
       sections,
-      tags: Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([label, count]) => ({ label, count })),
+      tags: NEWS_TAGS.map((label) => ({ label, count: counts[label] || 0 })),
       total: published.length,
     });
   })
@@ -120,7 +153,7 @@ newsRouter.get(
     save();
 
     const related = db.news
-      .filter((x) => x.id !== a.id && x.status === 'published')
+      .filter((x) => x.id !== a.id && x.status === 'published' && (a.series ? x.series === a.series : !x.series))
       .map((x) => ({ x, score: (x.tags || []).filter((t) => (a.tags || []).includes(t)).length + (x.section === a.section ? 1 : 0) }))
       .filter((r) => r.score > 0)
       .sort((r1, r2) => r2.score - r1.score)
@@ -132,10 +165,22 @@ newsRouter.get(
         ...listItem(a),
         body: englishArticle(a).body,
         dateline: englishArticle(a).dateline,
-        authorCards: a.authorIds
+        openingParagraphCount: Number.isFinite(a.openingParagraphCount) ? a.openingParagraphCount : undefined,
+        media: a.media || [],
+        dialogueAvatars: a.dialogueAvatars || {},
+        contributorCards: [...new Set([...(a.authorIds || []), ...(a.illustratorIds || []), ...(a.proofreaderIds || [])])]
           .map((id) => db.journalists.find((j) => j.id === id))
           .filter(Boolean)
-          .map((j) => ({ id: j.id, name: AUTHOR_EN[j.id] || j.name, title: { jnl_lyra: 'Chief Conflict Correspondent', jnl_kai: 'Investigations Editor', jnl_mira: 'Diplomacy Correspondent', jnl_ash: 'Director of Visual Journalism', jnl_wen: 'Markets Correspondent' }[j.id] || j.title, avatar: j.avatar, beats: AUTHOR_BEATS_EN[j.id] || j.beats })),
+          .map((j) => ({
+            id: j.id,
+            name: AUTHOR_EN[j.id] || j.name,
+            title: { jnl_lyra: 'Chief Conflict Correspondent', jnl_kai: 'Investigations Editor', jnl_mira: 'Diplomacy Correspondent', jnl_ash: 'Director of Visual Journalism', jnl_wen: 'Markets Correspondent' }[j.id] || j.title,
+            roles: [...((a.authorIds || []).includes(j.id) ? ['Writer'] : []), ...((a.illustratorIds || []).includes(j.id) ? ['Illustrator'] : []), ...((a.proofreaderIds || []).includes(j.id) ? ['Proofreader'] : [])],
+            avatar: minecraftAvatar(j) || j.avatar,
+            ign: j.ign || null,
+            aliases: j.aliases || [],
+            beats: AUTHOR_BEATS_EN[j.id] || j.beats,
+          })),
       },
       related,
     });

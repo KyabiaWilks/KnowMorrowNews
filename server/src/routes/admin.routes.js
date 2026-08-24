@@ -4,6 +4,10 @@ import { requireAdmin } from '../auth.js';
 import { audit, credit, publicProfile, publicUser, record, walletOf } from '../services.js';
 import { bad, missing, now, uid, wrap } from '../util.js';
 import { REPORT_REASONS } from './tavern.routes.js';
+import { normalizeReporterBeats } from '../reporterBeats.js';
+import { normalizeNewsTags } from '../newsTags.js';
+import { ensureJournalistProfile } from '../journalistProfiles.js';
+import { audienceForUser } from '../audience.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -47,6 +51,11 @@ const slugify = (s) =>
     .replace(/^-|-$/g, '')
     .slice(0, 60) || uid('post');
 
+const capitalizeTag = (value) => {
+  const label = String(value || '').trim();
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : label;
+};
+
 adminRouter.post(
   '/news',
   wrap((req, res) => {
@@ -57,10 +66,13 @@ adminRouter.post(
       summary: String(req.body.summary || '').slice(0, 300),
       body: String(req.body.body || ''),
       section: String(req.body.section || 'Headlines'),
-      tags: Array.isArray(req.body.tags) ? req.body.tags.slice(0, 8) : [],
+      tags: normalizeNewsTags(req.body.tags),
       cover: req.body.cover || null,
       dateline: String(req.body.dateline || ''),
       authorIds: Array.isArray(req.body.authorIds) ? req.body.authorIds : [],
+      illustratorIds: Array.isArray(req.body.illustratorIds) ? req.body.illustratorIds.filter((id) => db.journalists.some((item) => item.id === id)) : [],
+      proofreaderIds: Array.isArray(req.body.proofreaderIds) ? req.body.proofreaderIds.filter((id) => db.journalists.some((item) => item.id === id)) : [],
+      visualCredit: String(req.body.visualCredit || '').trim().slice(0, 160) || null,
       status: req.body.status === 'draft' ? 'draft' : 'published',
       featured: !!req.body.featured,
       readingMinutes: Math.max(1, Math.round(String(req.body.body || '').length / 400)),
@@ -79,11 +91,13 @@ adminRouter.patch(
   wrap((req, res) => {
     const a = db.news.find((x) => x.id === req.params.id);
     if (!a) throw missing('News article not found.');
-    for (const key of ['title', 'summary', 'body', 'section', 'cover', 'dateline', 'status', 'featured', 'publishedAt']) {
+    for (const key of ['title', 'summary', 'body', 'section', 'cover', 'visualCredit', 'dateline', 'status', 'featured', 'publishedAt']) {
       if (req.body[key] !== undefined) a[key] = req.body[key];
     }
-    if (Array.isArray(req.body.tags)) a.tags = req.body.tags.slice(0, 8);
+    if (Array.isArray(req.body.tags)) a.tags = normalizeNewsTags(req.body.tags, a.id);
     if (Array.isArray(req.body.authorIds)) a.authorIds = req.body.authorIds;
+    if (Array.isArray(req.body.illustratorIds)) a.illustratorIds = req.body.illustratorIds.filter((id) => db.journalists.some((item) => item.id === id));
+    if (Array.isArray(req.body.proofreaderIds)) a.proofreaderIds = req.body.proofreaderIds.filter((id) => db.journalists.some((item) => item.id === id));
     a.readingMinutes = Math.max(1, Math.round(String(a.body || '').length / 400));
     audit(req.user, 'news.update', `Updated story “${a.title}”`);
     save();
@@ -107,7 +121,10 @@ adminRouter.delete(
 
 adminRouter.get(
   '/journalists',
-  wrap((_req, res) => res.json({ items: db.journalists }))
+  wrap((_req, res) => res.json({ items: db.journalists.map((journalist) => ({
+    ...journalist,
+    discordAvatar: db.users.find((user) => user.id === journalist.userId)?.discordAvatar || null,
+  })) }))
 );
 
 adminRouter.post(
@@ -118,14 +135,22 @@ adminRouter.post(
       name: String(req.body.name || 'New colleague').slice(0, 40),
       title: String(req.body.title || 'Journalist').slice(0, 40),
       avatar: req.body.avatar || null,
+      cardAvatar: req.body.cardAvatar || null,
       portraitTone: req.body.portraitTone || '#2f6bff',
       tagline: String(req.body.tagline || '').slice(0, 80),
       bio: String(req.body.bio || ''),
-      beats: Array.isArray(req.body.beats) ? req.body.beats : [],
+      beats: normalizeReporterBeats(req.body.beats),
       awards: Array.isArray(req.body.awards) ? req.body.awards : [],
       milestones: Array.isArray(req.body.milestones) ? req.body.milestones : [],
       signatureWorks: Array.isArray(req.body.signatureWorks) ? req.body.signatureWorks : [],
       contact: req.body.contact || null,
+      ign: String(req.body.ign || '').trim().slice(0, 16) || null,
+      pronouns: String(req.body.pronouns || '').trim().slice(0, 40) || null,
+      aliases: Array.isArray(req.body.aliases) ? req.body.aliases.map((item) => String(item).trim()).filter(Boolean).slice(0, 12) : [],
+      affiliations: Array.isArray(req.body.affiliations) ? req.body.affiliations.map((item) => String(item).trim()).filter(Boolean).slice(0, 12) : [],
+      funFact: String(req.body.funFact || '').trim().slice(0, 300) || null,
+      imageCredit: String(req.body.imageCredit || '').trim().slice(0, 120) || null,
+      gallery: Array.isArray(req.body.gallery) ? req.body.gallery.slice(0, 8) : [],
       featured: !!req.body.featured,
       hidden: false,
       joinedAt: req.body.joinedAt || now(),
@@ -142,12 +167,18 @@ adminRouter.patch(
   wrap((req, res) => {
     const j = db.journalists.find((x) => x.id === req.params.id);
     if (!j) throw missing('Journalist not found.');
-    for (const key of ['name', 'title', 'avatar', 'portraitTone', 'tagline', 'bio', 'contact', 'featured', 'hidden', 'joinedAt']) {
+    for (const key of ['name', 'title', 'avatar', 'cardAvatar', 'portraitTone', 'tagline', 'bio', 'contact', 'pronouns', 'funFact', 'imageCredit', 'featured', 'hidden', 'joinedAt']) {
       if (req.body[key] !== undefined) j[key] = req.body[key];
     }
-    for (const key of ['beats', 'awards', 'milestones', 'signatureWorks']) {
+    if (req.body.ign !== undefined) {
+      const ign = String(req.body.ign || '').trim();
+      if (ign && !/^[A-Za-z0-9_]{3,16}$/.test(ign)) throw bad('IGN must be 3–16 letters, numbers or underscores.');
+      j.ign = ign || null;
+    }
+    for (const key of ['aliases', 'affiliations', 'gallery', 'awards', 'milestones', 'signatureWorks']) {
       if (Array.isArray(req.body[key])) j[key] = req.body[key];
     }
+    if (req.body.beats !== undefined) j.beats = normalizeReporterBeats(req.body.beats, j.id);
     audit(req.user, 'journalist.update', `Updated journalist ${j.name}`);
     save();
     res.json({ journalist: j });
@@ -179,7 +210,20 @@ adminRouter.patch(
     const t = db.tags.find((x) => x.id === req.params.id);
     if (!t) throw missing('Tag not found.');
     if (t.kind === 'system') throw bad('System evidence tags cannot be modified.');
-    for (const key of ['label', 'color', 'description', 'archived']) if (req.body[key] !== undefined) t[key] = req.body[key];
+    if (req.body.label !== undefined) {
+      const previous = t.label;
+      const label = capitalizeTag(req.body.label).slice(0, 16);
+      if (!label) throw bad('Tag name cannot be empty.');
+      const duplicate = db.tags.find((item) => item.id !== t.id && item.label.toLowerCase() === label.toLowerCase());
+      if (duplicate) throw bad('A tag with this name already exists.');
+      t.label = label;
+      for (const collection of [db.offers, db.requests]) {
+        for (const item of collection) {
+          if (Array.isArray(item.tags)) item.tags = item.tags.map((tag) => tag === previous ? label : tag);
+        }
+      }
+    }
+    for (const key of ['color', 'description', 'archived']) if (req.body[key] !== undefined) t[key] = req.body[key];
     audit(req.user, 'tag.update', `Updated tag ${t.label}`);
     save();
     res.json({ tag: t });
@@ -196,6 +240,8 @@ adminRouter.get(
         const disclosed = db.arbitrations.some((item) => item.disclosure?.subject === u.username);
         return {
           ...publicUser(u),
+          discordId: u.discordId || null,
+          audience: audienceForUser(db, u).map((item) => ({ island: item.island, nation: item.nation, minecraftIgn: item.minecraftIgn })),
           frozenFunds: u.frozenFunds ?? 0,
           banReason: u.banReason || null,
           identityDisclosed: disclosed,
@@ -206,6 +252,88 @@ adminRouter.get(
   })
 );
 
+/* --------------------------- 广告与受众 --------------------------- */
+
+const stringList = (value) => Array.isArray(value) ? [...new Set(value.map((item) => String(item || '').trim()).filter(Boolean))] : [];
+const safeAdUrl = (value) => {
+  const candidate = String(value || '').trim();
+  if (!candidate) return null;
+  if (candidate.startsWith('/') && !candidate.startsWith('//')) return candidate;
+  try {
+    const url = new URL(candidate);
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+  } catch {
+    throw bad('Advertisement URLs must be an absolute HTTP(S) URL or a site-relative path.');
+  }
+};
+
+adminRouter.get('/audience', wrap((_req, res) => {
+  const items = (db.audienceMembers || []).map((item) => ({ ...item }));
+  res.json({
+    items,
+    summary: {
+      total: items.length,
+      linked: items.filter((item) => item.discordId).length,
+      islands: [...new Set(items.map((item) => item.island).filter(Boolean))].sort(),
+      nations: [...new Set(items.map((item) => item.nation).filter(Boolean))].sort(),
+    },
+  });
+}));
+
+adminRouter.get('/advertisements', wrap((_req, res) => res.json({ items: db.advertisements || [] })));
+
+adminRouter.post('/advertisements', wrap((req, res) => {
+  const title = String(req.body.title || '').trim();
+  if (!title) throw bad('Advertisement title is required.');
+  const advertisement = {
+    id: uid('ad'),
+    title: title.slice(0, 120),
+    body: String(req.body.body || '').trim().slice(0, 500),
+    imageUrl: safeAdUrl(req.body.imageUrl),
+    href: safeAdUrl(req.body.href),
+    placement: ['all', 'home', 'news'].includes(req.body.placement) ? req.body.placement : 'all',
+    includedIslands: stringList(req.body.includedIslands),
+    excludedIslands: stringList(req.body.excludedIslands),
+    excludedNations: stringList(req.body.excludedNations),
+    active: req.body.active !== false,
+    startsAt: req.body.startsAt || null,
+    endsAt: req.body.endsAt || null,
+    createdAt: now(),
+    createdBy: req.user.id,
+  };
+  db.advertisements ||= [];
+  db.advertisements.unshift(advertisement);
+  audit(req.user, 'advertisement.create', `Created advertisement “${advertisement.title}”`);
+  save();
+  res.json({ advertisement });
+}));
+
+adminRouter.patch('/advertisements/:id', wrap((req, res) => {
+  const advertisement = (db.advertisements || []).find((item) => item.id === req.params.id);
+  if (!advertisement) throw missing('Advertisement not found.');
+  for (const key of ['title', 'body', 'startsAt', 'endsAt']) {
+    if (req.body[key] !== undefined) advertisement[key] = String(req.body[key] || '').trim() || null;
+  }
+  for (const key of ['imageUrl', 'href']) if (req.body[key] !== undefined) advertisement[key] = safeAdUrl(req.body[key]);
+  if (req.body.placement !== undefined && ['all', 'home', 'news'].includes(req.body.placement)) advertisement.placement = req.body.placement;
+  if (req.body.includedIslands !== undefined) advertisement.includedIslands = stringList(req.body.includedIslands);
+  if (req.body.excludedIslands !== undefined) advertisement.excludedIslands = stringList(req.body.excludedIslands);
+  if (req.body.excludedNations !== undefined) advertisement.excludedNations = stringList(req.body.excludedNations);
+  if (req.body.active !== undefined) advertisement.active = !!req.body.active;
+  audit(req.user, 'advertisement.update', `Updated advertisement “${advertisement.title}”`);
+  save();
+  res.json({ advertisement });
+}));
+
+adminRouter.delete('/advertisements/:id', wrap((req, res) => {
+  const index = (db.advertisements || []).findIndex((item) => item.id === req.params.id);
+  if (index < 0) throw missing('Advertisement not found.');
+  const [advertisement] = db.advertisements.splice(index, 1);
+  audit(req.user, 'advertisement.delete', `Deleted advertisement “${advertisement.title}”`);
+  save();
+  res.json({ ok: true });
+}));
+
 adminRouter.patch(
   '/users/:id',
   wrap((req, res) => {
@@ -214,6 +342,7 @@ adminRouter.patch(
     if (req.body.siteRole && ['user', 'read_only_user', 'journalist', 'admin', 'read_only_admin'].includes(req.body.siteRole)) {
       u.siteRole = req.body.siteRole;
       u.role = req.body.siteRole === 'admin' ? 'admin' : 'user';
+      ensureJournalistProfile(db, u);
     }
     if (req.body.banned !== undefined) {
       u.banned = !!req.body.banned;

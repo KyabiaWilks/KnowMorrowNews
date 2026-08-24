@@ -4,6 +4,7 @@ import { HttpError, bad, missing, now, uid, fingerprint } from './util.js';
 /* ------------------------------ 钱包 / 账本 ------------------------------ */
 
 const money = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+const cents = (value) => Math.round(Number(value) * 100);
 
 export function walletOf(user) {
   return {
@@ -34,7 +35,7 @@ export function debit(user, amount, kind, memo, ref) {
   amount = money(amount);
   const w = walletOf(user);
   if (amount <= 0) throw bad('Amount must be greater than 0.');
-  if (w.available < amount) throw bad(`Insufficient TMT balance. Available: ${w.available}; required: ${amount}.`);
+  if (cents(w.available) < cents(amount)) throw bad(`Insufficient TMT balance. Available: ${w.available}; required: ${amount}.`);
   user.coins = money(user.coins - amount);
   record(user.id, -amount, kind, memo, ref);
   save();
@@ -98,10 +99,11 @@ export function publicUser(user) {
     minecraftId: user.minecraftId || null,
     minecraftUuid: user.minecraftUuid || null,
     avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
-    discordId: user.discordId || null,
     departedAt: user.departedAt || null,
     siteRole,
     readOnly: siteRole === 'read_only_admin' || siteRole === 'read_only_user',
+    contributor: (db.contributors || []).some((item) => item.username?.toLowerCase() === user.username?.toLowerCase()),
+    editorialScope: String(user.username || '').toLowerCase() === 'thegunrat' ? 'thegunrat-quotes' : null,
   };
 }
 

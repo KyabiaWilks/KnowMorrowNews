@@ -33,6 +33,7 @@ walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
           minecraftId: user.minecraftId || null,
           minecraftUuid: user.minecraftUuid || null,
           avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
+          contributor: (db.contributors || []).some((item) => item.username?.toLowerCase() === user.username?.toLowerCase()),
           matchedBy: matchedMask ? `Mask · ${matchedMask.alias}` : matchedField[0],
           mask: matchedMask ? { alias: matchedMask.alias, sigil: matchedMask.sigil } : null,
         }];
@@ -45,6 +46,7 @@ walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
         minecraftId: user.minecraftId || null,
         minecraftUuid: user.minecraftUuid || null,
         avatar: user.discordAvatar || (user.minecraftUuid ? `/api/auth/minecraft-avatar/${user.minecraftUuid}` : null),
+        contributor: (db.contributors || []).some((item) => item.username?.toLowerCase() === user.username?.toLowerCase()),
         matchedBy: matchedField[0],
         mask: null,
       }] : [];
@@ -58,6 +60,7 @@ walletRouter.get('/recipients', requireAuth, wrap((req, res) => {
           minecraftId: null,
           minecraftUuid: null,
           avatar: null,
+          contributor: false,
           matchedBy: 'Mask alias',
           mask: { alias: profile.alias, sigil: profile.sigil },
         }));

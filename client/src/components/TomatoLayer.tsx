@@ -18,7 +18,7 @@ export function TomatoLayer() {
     void throwAt(((event.clientX - rect.left) / rect.width) * 100, ((event.clientY - rect.top) / rect.height) * 100);
   };
   return <div className={`tomato-layer ${armed ? 'tomato-layer--armed' : ''}`} onClick={onClick}>
-    {tomatoes.map((tomato) => <button key={tomato.id} type="button" className="tomato" style={{ left: `${tomato.x}%`, top: `${tomato.y}%`, transform: `translate(-50%, -50%) rotate(${tomato.rot}deg) scale(${tomato.scale})` }} onClick={(event) => { event.stopPropagation(); if (tomato.mine || user?.siteRole === 'admin') void wipe(tomato.id); }} disabled={!tomato.mine && user?.siteRole !== 'admin'} title={tomato.mine ? 'Click to remove your tomato' : tomato.alias}><TomatoSplat splat={tomato.splat} /><span className="tomato__note">{tomato.note ? `“${tomato.note}” — ` : ''}{tomato.alias}</span></button>)}
+    {tomatoes.map((tomato) => <button key={tomato.id} type="button" className="tomato" style={{ left: `${tomato.x}%`, top: `${tomato.y}%`, transform: `translate(-50%, -50%) rotate(${tomato.rot}deg) scale(${tomato.scale})` }} onClick={(event) => { event.stopPropagation(); if (tomato.mine || user?.siteRole === 'admin') void wipe(tomato.id); }} disabled={!tomato.mine && user?.siteRole !== 'admin'} title={tomato.mine ? 'Click to remove your tomato' : tomato.alias}><TomatoSplat splat={tomato.splat} /><span className={`tomato__note${tomato.contributor && !page.startsWith('/tavern') ? ' contributor-name' : ''}`}>{tomato.note ? `“${tomato.note}” — ` : ''}{tomato.alias}</span></button>)}
   </div>;
 }
 

@@ -6,6 +6,7 @@ import AdminTags from './AdminTags';
 import AdminUsers from './AdminUsers';
 import AdminReports from './AdminReports';
 import AdminTomatoes from './AdminTomatoes';
+import AdminAdvertisements from './AdminAdvertisements';
 import { AdminLanguageProvider, useAdminLanguage } from './AdminLanguage';
 
 const TABS = [
@@ -14,6 +15,7 @@ const TABS = [
   { to: 'journalists', en: 'Journalists', zh: '记者' },
   { to: 'reports', en: 'Reports & arbitration', zh: '举报与仲裁' },
   { to: 'users', en: 'Users & masks', zh: '用户与马甲' },
+  { to: 'advertisements', en: 'Advertisements', zh: '广告投放' },
   { to: 'tags', en: 'Tags', zh: '标签' },
   { to: 'tomatoes', en: 'Tomato moderation', zh: '番茄管理' },
 ];
@@ -30,7 +32,7 @@ function AdminShell() {
     </div>
     <div className="admin-layout">
       <nav className="admin-nav">{TABS.map((tab) => <NavLink key={tab.to} to={`/admin/${tab.to}`} end={tab.end}>{t(tab.en, tab.zh)}</NavLink>)}</nav>
-      <div><Routes><Route index element={<AdminOverview />} /><Route path="news" element={<AdminNews />} /><Route path="journalists" element={<AdminJournalists />} /><Route path="reports" element={<AdminReports />} /><Route path="users" element={<AdminUsers />} /><Route path="tags" element={<AdminTags />} /><Route path="tomatoes" element={<AdminTomatoes />} /></Routes></div>
+      <div><Routes><Route index element={<AdminOverview />} /><Route path="news" element={<AdminNews />} /><Route path="journalists" element={<AdminJournalists />} /><Route path="reports" element={<AdminReports />} /><Route path="users" element={<AdminUsers />} /><Route path="advertisements" element={<AdminAdvertisements />} /><Route path="tags" element={<AdminTags />} /><Route path="tomatoes" element={<AdminTomatoes />} /></Routes></div>
     </div>
   </div>;
 }

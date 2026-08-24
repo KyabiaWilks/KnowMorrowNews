@@ -3,18 +3,23 @@ import { del, get, patch, post } from '../../lib/api';
 import { Modal, Spinner } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
 import { useAdminLanguage } from './AdminLanguage';
+import { ImageUploadButton } from '../../components/ImageUploadButton';
 
 type Award = { name: string; year: number; work?: string };
 type Milestone = { year: number; text: string };
+const REPORTER_TAGS = ['Writer', 'Illustrator', 'Layout', 'Website', 'Head Editor'];
 type Row = {
   id: string; name: string; title: string; tagline: string; bio: string;
   beats: string[]; awards: Award[]; milestones: Milestone[]; contact: string | null;
+  ign: string | null;
+  pronouns: string | null; aliases: string[]; affiliations: string[]; funFact: string | null; imageCredit: string | null;
+  avatar: string | null; cardAvatar: string | null; discordAvatar: string | null; gallery: { src: string; alt: string; credit?: string | null }[];
   portraitTone: string; featured: boolean; hidden: boolean;
 };
 
 const blank = (): Partial<Row> => ({
   name: '', title: 'Journalist', tagline: '', bio: '', beats: [], awards: [],
-  milestones: [], contact: '', portraitTone: '#2f6bff', featured: false, hidden: false,
+  milestones: [], contact: '', ign: '', pronouns: '', aliases: [], affiliations: [], funFact: '', imageCredit: '', avatar: null, cardAvatar: null, discordAvatar: null, gallery: [], portraitTone: '#2f6bff', featured: false, hidden: false,
 });
 
 export default function AdminJournalists() {
@@ -30,9 +35,9 @@ export default function AdminJournalists() {
     if (!editing) return;
     const payload = {
       ...editing,
-      beats: typeof editing.beats === 'string'
-        ? String(editing.beats).split(/[,，\n]+/).map((item) => item.trim()).filter(Boolean)
-        : editing.beats,
+      beats: editing.beats,
+      aliases: typeof editing.aliases === 'string' ? String(editing.aliases).split(/[,，\n]+/).map((item) => item.trim()).filter(Boolean) : editing.aliases,
+      affiliations: typeof editing.affiliations === 'string' ? String(editing.affiliations).split(/[,，\n]+/).map((item) => item.trim()).filter(Boolean) : editing.affiliations,
     };
     try {
       if (editing.id) await patch(`/admin/journalists/${editing.id}`, payload);
@@ -56,8 +61,8 @@ export default function AdminJournalists() {
       <div className="grid grid--2">
         {rows.map((journalist) => (
           <article key={journalist.id} className="card card--pad row" style={{ alignItems: 'flex-start' }}>
-            <div className="jnl-portrait" style={{ width: 54, height: 54, fontSize: 20, background: `linear-gradient(135deg, ${journalist.portraitTone}, #0b2545)` }}>
-              {journalist.name.slice(0, 1)}
+            <div className="jnl-portrait journalist-directory-avatar" style={{ width: 54, height: 54, fontSize: 20, background: `linear-gradient(135deg, ${journalist.portraitTone}, #0b2545)` }}>
+              {(journalist.cardAvatar || journalist.discordAvatar || journalist.avatar) ? <img src={journalist.cardAvatar || journalist.discordAvatar || journalist.avatar || ''} alt="" /> : journalist.name.slice(0, 1)}
             </div>
             <div className="stack" style={{ flex: 1, gap: 6 }}>
               <div className="row row--between"><strong>{journalist.name}</strong>{journalist.hidden && <span className="chip chip--danger">{t('Hidden', '已隐藏')}</span>}</div>
@@ -87,9 +92,20 @@ export default function AdminJournalists() {
             <div className="field" style={{ width: 110 }}><label>{t('Color', '主题色')}</label><input className="input" type="color" value={editing.portraitTone || '#2f6bff'} onChange={(event) => setEditing({ ...editing, portraitTone: event.target.value })} /></div>
           </div>
           <div className="field"><label>{t('Tagline', '格言')}</label><input className="input" value={editing.tagline || ''} onChange={(event) => setEditing({ ...editing, tagline: event.target.value })} /></div>
-          <div className="field"><label>{t('Beats (comma separated)', '负责分区（逗号分隔）')}</label><input className="input" value={Array.isArray(editing.beats) ? editing.beats.join(', ') : editing.beats || ''} onChange={(event) => setEditing({ ...editing, beats: event.target.value as unknown as string[] })} /></div>
+          <div className="field"><label>{t('Reporter tags', '记者标签')}</label><div className="row">{REPORTER_TAGS.map((tag) => { const active = (editing.beats || []).includes(tag); return <button type="button" key={tag} className={`chip ${active ? 'chip--on' : ''}`} onClick={() => setEditing({ ...editing, beats: active ? (editing.beats || []).filter((value) => value !== tag) : [...(editing.beats || []), tag] })}>{tag}</button>; })}</div></div>
           <div className="field"><label>{t('Biography', '简介')}</label><textarea className="textarea" value={editing.bio || ''} onChange={(event) => setEditing({ ...editing, bio: event.target.value })} /></div>
           <div className="field"><label>{t('Contact', '联系方式')}</label><input className="input" value={editing.contact || ''} onChange={(event) => setEditing({ ...editing, contact: event.target.value })} /></div>
+          <div className="field"><label>{t('Minecraft IGN', 'Minecraft 游戏名（IGN）')}</label><input className="input" value={editing.ign || ''} maxLength={16} onChange={(event) => setEditing({ ...editing, ign: event.target.value })} placeholder="Minecraft username" /></div>
+          <div className="row">
+            <div className="field" style={{ flex: 1 }}><label>{t('Pronouns', '代词')}</label><input className="input" value={editing.pronouns || ''} onChange={(event) => setEditing({ ...editing, pronouns: event.target.value })} /></div>
+            <div className="field" style={{ flex: 2 }}><label>{t('Common aliases', '常用别名')}</label><input className="input" value={Array.isArray(editing.aliases) ? editing.aliases.join(', ') : editing.aliases || ''} onChange={(event) => setEditing({ ...editing, aliases: event.target.value as unknown as string[] })} /></div>
+          </div>
+          <div className="field"><label>{t('Affiliations (one per line)', '所属组织（每行一个）')}</label><textarea className="textarea" value={Array.isArray(editing.affiliations) ? editing.affiliations.join('\n') : editing.affiliations || ''} onChange={(event) => setEditing({ ...editing, affiliations: event.target.value as unknown as string[] })} /></div>
+          <div className="field"><label>{t('Fun fact', '趣闻')}</label><input className="input" value={editing.funFact || ''} onChange={(event) => setEditing({ ...editing, funFact: event.target.value })} /></div>
+          <div className="field"><label>{t('Image credit', '图片署名')}</label><input className="input" value={editing.imageCredit || ''} onChange={(event) => setEditing({ ...editing, imageCredit: event.target.value })} /></div>
+          <div className="field"><label>{t('Circular directory avatar', '记者栏目圆形头像')}</label><div className="avatar-choice-grid">
+            {[...(editing.discordAvatar ? [{ src: editing.discordAvatar, label: 'Discord' }] : []), ...(editing.avatar ? [{ src: editing.avatar, label: t('Profile image', '简介主图') }] : []), ...((editing.gallery || []).map((image, index) => ({ src: image.src, label: `${t('Gallery', '简介图片')} ${index + 1}` })))].filter((option, index, list) => list.findIndex((item) => item.src === option.src) === index).map((option) => <button type="button" title={option.label} key={option.src} className={`avatar-choice ${editing.cardAvatar === option.src ? 'avatar-choice--active' : ''}`} onClick={() => setEditing({ ...editing, cardAvatar: option.src })}><img src={option.src} alt={option.label} /></button>)}
+          </div><div className="row"><ImageUploadButton label={t('Upload avatar', '上传头像')} onUploaded={(url) => setEditing({ ...editing, cardAvatar: url })} /><button type="button" className="btn btn--sm" onClick={() => setEditing({ ...editing, cardAvatar: null })}>{t('Use Discord default', '使用 Discord 默认头像')}</button></div></div>
           <div className="field">
             <div className="row row--between"><label>{t('Awards', '获奖记录')}</label><button className="btn btn--sm" onClick={() => setEditing({ ...editing, awards: [...(editing.awards || []), { name: '', year: new Date().getFullYear(), work: '' }] })}>{t('Add', '添加')}</button></div>
             {(editing.awards || []).map((award, index) => <div className="row" key={index}>

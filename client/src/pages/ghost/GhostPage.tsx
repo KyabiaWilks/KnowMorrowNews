@@ -5,11 +5,11 @@
  * 会话密钥只放在 sessionStorage，关掉标签页即失效；
  * 服务端对本页的所有查询都不写审计日志、不增加浏览数、不通知任何人。
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { del, get, ghostStore, post } from '../../lib/api';
 import { fmtTime, tmt } from '../../lib/format';
 
-type Tab = 'overview' | 'identities' | 'offers' | 'requests' | 'ledger' | 'reports' | 'tomatoes' | 'search';
+type Tab = 'overview' | 'identities' | 'offers' | 'requests' | 'ledger' | 'reports' | 'tomatoes' | 'ign-copies' | 'ticket-archives' | 'ticket-messages' | 'search';
 type Language = 'en' | 'zh';
 type Translate = (english: string, chinese: string) => string;
 
@@ -21,6 +21,9 @@ const TABS: { id: Tab; en: string; zh: string }[] = [
   { id: 'ledger', en: 'Ledger', zh: '资金流水' },
   { id: 'reports', en: 'Reports', zh: '举报底档' },
   { id: 'tomatoes', en: 'Tomatoes', zh: '番茄溯源' },
+  { id: 'ign-copies', en: 'IGN copies', zh: 'IGN 复制记录' },
+  { id: 'ticket-archives', en: 'Ticket archives', zh: 'Ticket 归档' },
+  { id: 'ticket-messages', en: 'Ticket messages', zh: 'Ticket 消息' },
   { id: 'search', en: 'Search', zh: '全站检索' },
 ];
 
@@ -110,6 +113,9 @@ export default function GhostPage() {
         {data && tab === 'ledger' && <Ledger data={data} t={t} />}
         {data && tab === 'reports' && <Reports data={data} t={t} />}
         {data && tab === 'tomatoes' && <Tomatoes data={data} t={t} />}
+        {data && tab === 'ign-copies' && <IgnCopies data={data} t={t} />}
+        {data && tab === 'ticket-archives' && <TicketArchives data={data} t={t} />}
+        {data && tab === 'ticket-messages' && <TicketMessages data={data} t={t} />}
         {data && tab === 'search' && <SearchResults data={data} t={t} />}
       </div>
     </div>
@@ -494,19 +500,105 @@ function Tomatoes({ data, t }: { data: any; t: Translate }) {
   );
 }
 
+function IgnCopies({ data, t }: { data: any; t: Translate }) {
+  return (
+    <div className="ghost-card">
+      <div style={{ opacity: 0.6, marginBottom: 8 }}>// {t('Signed-in accounts that used a reporter’s Copy IGN button.', '点击记者“复制 IGN”按钮的已登录账号。')}</div>
+      <table className="ghost-table">
+        <thead><tr><th>{t('Time', '时间')}</th><th>{t('Account', '复制者账号')}</th><th>{t('Reporter', '记者')}</th><th>IGN</th><th>{t('Source page', '来源页面')}</th></tr></thead>
+        <tbody>{data.items.map((entry: any) => <tr key={entry.id}>
+          <td>{fmtTime(entry.createdAt)}</td>
+          <td><strong>{entry.copierUsername}</strong></td>
+          <td>{entry.journalistName}</td>
+          <td><span className="ghost-tag">{entry.ign}</span></td>
+          <td>{entry.page}</td>
+        </tr>)}</tbody>
+      </table>
+      {data.items.length === 0 && <div style={{ opacity: 0.5, paddingTop: 8 }}>// {t('No IGN copy records', '暂无 IGN 复制记录')}</div>}
+    </div>
+  );
+}
+
+function JsonBlock({ value }: { value: unknown }) {
+  if (value == null || (Array.isArray(value) && value.length === 0)) return null;
+  return <pre style={{ maxHeight: 320, margin: '8px 0 0', padding: 10, overflow: 'auto', border: '1px solid rgba(125,255,196,.12)', borderRadius: 4, background: 'rgba(0,0,0,.2)', color: '#bdebd5', fontSize: 11, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(value, null, 2)}</pre>;
+}
+
+function TicketArchives({ data, t }: { data: any; t: Translate }) {
+  return <div>
+    <div style={{ opacity: 0.6, marginBottom: 10 }}>// {t('Archived Discord ticket channels and their original channel metadata.', '已归档的 Discord ticket 频道及原始频道信息。')}</div>
+    {data.items.map((archive: any) => <article className="ghost-card" key={archive.channel_id}>
+      <div className="row row--between" style={{ alignItems: 'flex-start', gap: 12 }}>
+        <div><strong>{archive.channel_name || archive.channel_id}</strong><div style={{ opacity: 0.6 }}>Channel {archive.channel_id} · Guild {archive.guild_id || '—'}</div></div>
+        <div style={{ textAlign: 'right', opacity: 0.65 }}>{archive.archived_at ? fmtTime(archive.archived_at) : '—'}<br />{archive.message_count ?? 0} {t('messages', '条消息')}</div>
+      </div>
+      {archive.topic && <p style={{ whiteSpace: 'pre-wrap' }}>{archive.topic}</p>}
+      <div style={{ opacity: 0.65 }}>{t('Archived by', '归档操作人')}：{archive.archived_by_user_id || '—'} · {t('Channel type', '频道类型')}：{archive.channel_type ?? '—'}</div>
+      <details style={{ marginTop: 8 }}><summary>{t('Raw channel record', '原始频道记录')}</summary><JsonBlock value={archive.raw_channel} /></details>
+    </article>)}
+    {data.items.length === 0 && <div style={{ opacity: 0.5 }}>// {t('No ticket archives', '暂无 Ticket 归档')}</div>}
+  </div>;
+}
+
+function TicketMessages({ data, t }: { data: any; t: Translate }) {
+  return <div>
+    <div style={{ opacity: 0.6, marginBottom: 10 }}>// {t('Messages are grouped by ticket and ordered oldest to newest. Opening a ticket jumps to its latest message.', '消息按 Ticket 分类，内部从旧到新排列；展开 Ticket 时会自动定位到最新消息。')}</div>
+    {data.tickets.map((ticket: any) => <TicketThread ticket={ticket} t={t} key={ticket.channelId} />)}
+    {data.tickets.length === 0 && <div style={{ opacity: 0.5 }}>// {t('No ticket messages', '暂无 Ticket 消息')}</div>}
+  </div>;
+}
+
+function TicketThread({ ticket, t }: { ticket: any; t: Translate }) {
+  const threadRef = useRef<HTMLDivElement>(null);
+  const jumpToLatest = () => {
+    requestAnimationFrame(() => {
+      if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
+    });
+  };
+  return <details className="ghost-card" onToggle={(event) => { if (event.currentTarget.open) jumpToLatest(); }}>
+    <summary style={{ cursor: 'pointer' }}>
+      <strong>{ticket.channelName || ticket.channelId}</strong>
+      <span style={{ opacity: 0.6 }}> · {ticket.messages.length} {t('messages', '条消息')} · Channel {ticket.channelId}</span>
+      {ticket.archivedAt && <span style={{ float: 'right', opacity: 0.55 }}>{fmtTime(ticket.archivedAt)}</span>}
+    </summary>
+    {ticket.topic && <div style={{ margin: '9px 0', opacity: 0.65, whiteSpace: 'pre-wrap' }}>{ticket.topic}</div>}
+    <div ref={threadRef} style={{ maxHeight: '68vh', marginTop: 10, paddingRight: 5, overflowY: 'auto', scrollBehavior: 'smooth' }}>
+    {ticket.messages.map((message: any) => <article style={{ padding: '12px 0', borderTop: '1px solid rgba(125,255,196,.12)' }} key={`${message.channel_id}-${message.message_id}`}>
+      <div className="row row--between" style={{ alignItems: 'flex-start', gap: 12 }}>
+        <div><strong>{message.author_display_name || message.author_username || message.author_id || t('Unknown author', '未知作者')}</strong>{message.author_username && <span style={{ opacity: 0.6 }}> @{message.author_username}</span>}<div style={{ opacity: 0.55 }}>Author {message.author_id || '—'} · Channel {message.channel_id} · #{message.ordinal ?? '—'}</div></div>
+        <div style={{ textAlign: 'right', opacity: 0.65 }}>{message.sent_at ? fmtTime(message.sent_at) : '—'}{message.edited_at && <><br />{t('Edited', '编辑于')} {fmtTime(message.edited_at)}</>}</div>
+      </div>
+      <div style={{ marginTop: 10, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: '#c9ffe6' }}>{message.content || <span style={{ opacity: 0.45 }}>{t('(no text content)', '（无文本内容）')}</span>}</div>
+      {(message.attachments?.length > 0 || message.embeds?.length > 0) && <details style={{ marginTop: 8 }} open><summary>{t('Attachments and embeds', '附件与嵌入内容')}</summary><JsonBlock value={{ attachments: message.attachments, embeds: message.embeds }} /></details>}
+      <details style={{ marginTop: 8 }}><summary>{t('Raw message record', '原始消息记录')}</summary><JsonBlock value={message.raw_message} /></details>
+    </article>)}
+    </div>
+  </details>;
+}
+
 function SearchResults({ data, t }: { data: any; t: Translate }) {
   if (!data.groups?.length) return <div style={{ opacity: 0.5 }}>// {t('Enter a keyword to search paid text, anonymous identities, and ledger entries.', '输入关键词开始检索。付费正文、匿名身份、资金流水都在检索范围内。')}</div>;
+  const groupLabel = (kind: string) => ({
+    identities: t('Identities', '身份'),
+    tips: t('Full tips', '情报全文'),
+    requests: t('Requests', '委托'),
+    news: t('News', '报道'),
+    ledger: t('Ledger', '流水'),
+    'ticket-archives': t('Ticket archives', 'Ticket 归档'),
+    'ticket-messages': t('Ticket messages', 'Ticket 消息'),
+  }[kind] || kind);
   return (
     <div>
       {data.groups.map((g: any) => (
         <div key={g.kind} className="ghost-card">
           <h3 style={{ fontSize: 14, marginBottom: 8 }}>
-            // {g.kind}（{g.hits.length}）
+            // {groupLabel(g.kind)} ({g.hits.length})
           </h3>
           {g.hits.map((h: any) => (
             <div key={h.id} style={{ padding: '5px 0', borderBottom: '1px solid rgba(125,255,196,.08)' }}>
               <div>{h.title}</div>
               <div style={{ opacity: 0.6 }}>{h.sub}</div>
+              {h.at && <div style={{ opacity: 0.45 }}>{fmtTime(h.at)}</div>}
             </div>
           ))}
         </div>

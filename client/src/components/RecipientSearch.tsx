@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { get, qs } from '../lib/api';
+import { ContributorName } from './ContributorName';
 
 export type RecipientMatch = {
   id: string;
@@ -11,6 +12,7 @@ export type RecipientMatch = {
   avatar: string | null;
   matchedBy: string;
   mask: { alias: string; sigil: string } | null;
+  contributor: boolean;
 };
 
 export function RecipientSearch({ value, onChange, separateIdentities = false }: { value: RecipientMatch | null; onChange: (recipient: RecipientMatch | null) => void; separateIdentities?: boolean }) {
@@ -45,7 +47,7 @@ export function RecipientSearch({ value, onChange, separateIdentities = false }:
 
   if (value) return <div className="recipient-selected">
     <RecipientAvatar recipient={value} />
-    <div style={{ flex: 1 }}><strong>{value.displayName}</strong><div className="muted">{value.identityType === 'mask' ? 'Mask identity' : `@${value.username}${value.minecraftId ? ` · MC ${value.minecraftId}` : ''}`}</div></div>
+    <div style={{ flex: 1 }}><strong><ContributorName contributor={value.identityType === 'account' && value.contributor}>{value.displayName}</ContributorName></strong><div className="muted">{value.identityType === 'mask' ? 'Mask identity' : <><ContributorName contributor={value.contributor}>@{value.username}</ContributorName>{value.minecraftId ? ` · MC ${value.minecraftId}` : ''}</>}</div></div>
     <button className="btn btn--sm" onClick={() => { onChange(null); setQuery(''); }}>Change</button>
   </div>;
 
@@ -54,7 +56,7 @@ export function RecipientSearch({ value, onChange, separateIdentities = false }:
     {query.trim().length >= 1 && <div className="recipient-results">
       {items.map((recipient) => <button type="button" key={recipient.id} className="recipient-result" onClick={() => onChange(recipient)}>
         <RecipientAvatar recipient={recipient} />
-        <span style={{ flex: 1 }}><strong>{recipient.displayName}</strong><span className="muted">{recipient.identityType === 'mask' ? 'Mask identity · account hidden' : `@${recipient.username}${recipient.minecraftId ? ` · MC ${recipient.minecraftId}` : ''}`}</span></span>
+        <span style={{ flex: 1 }}><strong><ContributorName contributor={recipient.identityType === 'account' && recipient.contributor}>{recipient.displayName}</ContributorName></strong><span className="muted">{recipient.identityType === 'mask' ? 'Mask identity · account hidden' : <><ContributorName contributor={recipient.contributor}>@{recipient.username}</ContributorName>{recipient.minecraftId ? ` · MC ${recipient.minecraftId}` : ''}</>}</span></span>
         <span className="chip">{recipient.matchedBy}</span>
       </button>)}
       {!loading && items.length === 0 && <div className="muted" style={{ padding: 12 }}>No matching recipient.</div>}

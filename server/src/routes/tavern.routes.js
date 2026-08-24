@@ -27,6 +27,10 @@ const RESERVED_EVIDENCE_LABELS = [...EVIDENCE_TAGS, 'Detailed Evidenc'];
 const MAX_PROFILES = 6;
 const TAG_EN = { '有详细证据': 'Detailed evidence', '没有详细证据': 'No detailed evidence', '军事': 'Military', '外交': 'Diplomacy', '能源': 'Energy', '内部人事': 'Internal affairs', '卫星影像': 'Satellite imagery', '时效性强': 'Time-sensitive', '高风险': 'High risk', '经济': 'Economy', '基础设施情报': 'Infrastructure' };
 const TAG_SOURCE = {};
+const capitalizeTag = (value) => {
+  const label = String(value || '').trim();
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : label;
+};
 
 const isAdminUser = (user) => ['admin', 'read_only_admin', 'event_staff', 'superadmin'].includes(user?.siteRole) || user?.role === 'admin';
 const isBlocked = (listing, user) => !!user && !isAdminUser(user) && (listing.blockedUserIds || []).includes(user.id);
@@ -112,7 +116,7 @@ tavernRouter.post(
     if (RESERVED_EVIDENCE_LABELS.some((tag) => tag.toLowerCase() === requestedLabel.toLowerCase())) {
       throw bad('Evidence declarations are protected system tags and cannot be added as additional tags.');
     }
-    const label = requestedLabel.slice(0, 16);
+    const label = capitalizeTag(requestedLabel.slice(0, 16));
     const exists = db.tags.find((t) => t.label.toLowerCase() === label.toLowerCase());
     if (exists) {
       if (exists.archived) throw bad('This tag has been archived by an administrator.');
@@ -336,19 +340,22 @@ tavernRouter.post(
     // 买家也用马甲露面，保证卖家看不到真实身份
     const buyerProfile = req.body.buyerProfileId ? ownProfile(req.user, req.body.buyerProfileId) : null;
     const price = buyout ? offer.exclusivePrice : tier.price;
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) throw bad('This listing has an invalid purchase price.');
     const tierId = buyout ? '*' : tier.id;
     const tierName = buyout ? 'Exclusive buyout' : tier.name;
 
-    debit(req.user, price, 'offer_purchase', `Purchased “${offer.title}” — ${tierName}`, {
-      type: 'offer',
-      id: offer.id,
-      profileId: buyerProfile?.id,
-    });
-    credit(seller, price, 'offer_income', `Sold “${offer.title}” — ${tierName}`, {
-      type: 'offer',
-      id: offer.id,
-      profileId: offer.profileId,
-    });
+    if (Number(price) > 0) {
+      debit(req.user, price, 'offer_purchase', `Purchased “${offer.title}” — ${tierName}`, {
+        type: 'offer',
+        id: offer.id,
+        profileId: buyerProfile?.id,
+      });
+      credit(seller, price, 'offer_income', `Sold “${offer.title}” — ${tierName}`, {
+        type: 'offer',
+        id: offer.id,
+        profileId: offer.profileId,
+      });
+    }
 
     db.purchases.unshift({
       id: uid('buy'),

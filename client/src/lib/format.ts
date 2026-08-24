@@ -10,6 +10,29 @@ export function fmtTime(iso?: string | null) {
   return `${fmtDate(iso)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+export function fmtEasternDate(iso?: string | null) {
+  if (!iso) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(iso));
+}
+
+export function fmtEasternDateTime(iso?: string | null) {
+  if (!iso) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(new Date(iso));
+}
+
 export function fromNow(iso?: string | null) {
   if (!iso) return '—';
   const diff = Date.now() - new Date(iso).getTime();

@@ -5,10 +5,12 @@ import { hashPassword, verifyPassword, issueToken, requireAuth } from '../auth.j
 import { publicUser, record } from '../services.js';
 import { bad, now, uid, wrap, HttpError } from '../util.js';
 import { config } from '../config.js';
+import { ensureJournalistProfile } from '../journalistProfiles.js';
+import { linkAudienceToUser } from '../audience.js';
 
 export const authRouter = Router();
 
-const WELCOME_COINS = 120;
+const INITIAL_COINS = 0;
 
 authRouter.post('/register', (_req, res) => {
   res.status(403).json({ error: 'Registration is available through Discord only.' });
@@ -120,11 +122,10 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
       discordUsername: profile.username,
       discordAvatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=128` : null,
       discordRoles: roleNames,
-      coins: WELCOME_COINS, escrow: 0, frozenFunds: 0,
+      coins: INITIAL_COINS, escrow: 0, frozenFunds: 0,
       banned: false, banReason: null, noticeAckedAt: null, createdAt: now(),
     };
     db.users.push(user);
-    record(user.id, WELCOME_COINS, 'grant', 'Welcome gift for a new Discord reader');
     save();
   }
   user.displayName = member.nick || profile.global_name || profile.username || user.displayName;
@@ -132,29 +133,11 @@ authRouter.get('/discord/callback', wrap(async (req, res) => {
   user.discordUsername = profile.username;
   user.discordAvatar = profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=128` : null;
   user.discordRoles = roleNames;
+  linkAudienceToUser(db, user);
   const effectiveSiteRole = user.siteRole === 'read_only_user' ? 'read_only_user' : siteRole;
   user.siteRole = effectiveSiteRole;
   user.role = effectiveSiteRole === 'admin' ? 'admin' : 'user';
-  if (siteRole === 'journalist' && !db.journalists.some((item) => item.userId === user.id)) {
-    db.journalists.push({
-      id: `jnl_${user.id.replace(/^usr_/, '')}`,
-      userId: user.id,
-      name: user.displayName,
-      title: 'Staff Reporter',
-      avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.webp?size=512` : null,
-      portraitTone: '#2f6bff',
-      tagline: 'Every detail has a witness.',
-      bio: 'This reporter joined Know Morrow through the Tomato press corps.',
-      beats: ['General Assignment'],
-      awards: [],
-      milestones: [{ year: new Date().getFullYear(), text: 'Joined the Know Morrow press corps' }],
-      signatureWorks: [],
-      contact: null,
-      featured: false,
-      hidden: false,
-      joinedAt: now(),
-    });
-  }
+  ensureJournalistProfile(db, user);
   save();
   if (user.banned) throw new HttpError(403, 'This account has been suspended.');
   res.redirect(`${config.clientOrigin}/login#discord_token=${encodeURIComponent(issueToken(user))}`);
@@ -177,7 +160,7 @@ authRouter.post(
       displayName,
       password: hashPassword(password),
       role: 'user',
-      coins: WELCOME_COINS,
+      coins: INITIAL_COINS,
       escrow: 0,
       frozenFunds: 0,
       banned: false,
@@ -186,7 +169,6 @@ authRouter.post(
       createdAt: now(),
     };
     db.users.push(user);
-    record(user.id, WELCOME_COINS, 'grant', 'New reader welcome grant');
     save();
     res.json({ token: issueToken(user), user: publicUser(user) });
   })

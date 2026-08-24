@@ -5,7 +5,7 @@
  * 不得写入 db（除非明确要求）。查看行为对被查看者完全不可见。
  */
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, queryDatabase } from '../db.js';
 import { openGhostSession, closeGhostSession, requireGhost } from '../auth.js';
 import { walletOf } from '../services.js';
 import { matchText, wrap, HttpError } from '../util.js';
@@ -239,6 +239,28 @@ ghostRouter.get(
   })
 );
 
+/** 谁复制了记者公开展示的 Minecraft IGN */
+ghostRouter.get(
+  '/ign-copies',
+  wrap((req, res) => {
+    const q = req.query.q;
+    const items = db.auditLog
+      .filter((entry) => entry.action === 'journalist.ign_copy')
+      .map((entry) => ({
+        id: entry.id,
+        createdAt: entry.createdAt,
+        copierUserId: entry.actorId,
+        copierUsername: userOf(entry.actorId)?.username || entry.actorName || '?',
+        journalistId: entry.targetJournalistId,
+        journalistName: entry.targetJournalistName || db.journalists.find((item) => item.id === entry.targetJournalistId)?.name || 'Deleted reporter',
+        ign: entry.targetIgn,
+        page: entry.page,
+      }))
+      .filter((entry) => matchText(q, entry.copierUsername, entry.journalistName, entry.ign));
+    res.json({ items });
+  })
+);
+
 ghostRouter.get(
   '/reports',
   wrap((_req, res) => {
@@ -258,41 +280,146 @@ ghostRouter.get(
   })
 );
 
+/** Discord ticket channels and their archival metadata. */
+ghostRouter.get(
+  '/ticket-archives',
+  wrap(async (req, res) => {
+    const q = String(req.query.q || '').trim();
+    const result = await queryDatabase(
+      `SELECT channel_id, guild_id, channel_name, topic, channel_type,
+              archived_at, archived_by_user_id, message_count, raw_channel
+         FROM ticket_archives
+        WHERE $1 = '' OR concat_ws(' ', channel_id, guild_id, channel_name, topic,
+                                    archived_by_user_id, raw_channel::text) ILIKE $2
+        ORDER BY archived_at DESC NULLS LAST, channel_id
+        LIMIT 300`,
+      [q, `%${q}%`],
+    );
+    res.json({ items: result.rows });
+  })
+);
+
+/** Every original message captured from archived ticket channels. */
+ghostRouter.get(
+  '/ticket-messages',
+  wrap(async (req, res) => {
+    const q = String(req.query.q || '').trim();
+    const result = await queryDatabase(
+      `SELECT m.channel_id, m.message_id, m.ordinal, m.author_id, m.author_username,
+              m.author_display_name, m.content, m.sent_at, m.edited_at,
+              m.attachments, m.embeds, m.raw_message,
+              a.channel_name, a.topic, a.archived_at
+         FROM ticket_messages m
+         LEFT JOIN ticket_archives a ON a.channel_id = m.channel_id
+        WHERE $1 = '' OR concat_ws(' ', m.channel_id, m.message_id, m.author_id,
+                                    m.author_username, m.author_display_name, m.content,
+                                    m.attachments::text, m.embeds::text, m.raw_message::text,
+                                    a.channel_name, a.topic) ILIKE $2
+        ORDER BY m.channel_id, m.ordinal ASC NULLS LAST, m.sent_at ASC NULLS LAST`,
+      [q, `%${q}%`],
+    );
+    const tickets = [];
+    const byChannel = new Map();
+    for (const row of result.rows) {
+      let ticket = byChannel.get(row.channel_id);
+      if (!ticket) {
+        ticket = {
+          channelId: row.channel_id,
+          channelName: row.channel_name,
+          topic: row.topic,
+          archivedAt: row.archived_at,
+          messages: [],
+        };
+        byChannel.set(row.channel_id, ticket);
+        tickets.push(ticket);
+      }
+      const { channel_name, topic, archived_at, ...message } = row;
+      ticket.messages.push(message);
+    }
+    tickets.sort((a, b) => String(b.archivedAt || '').localeCompare(String(a.archivedAt || '')) || String(a.channelName || a.channelId).localeCompare(String(b.channelName || b.channelId)));
+    res.json({ tickets });
+  })
+);
+
 /** 一次搜遍全站：新闻、情报正文、委托、马甲、流水、番茄 */
 ghostRouter.get(
   '/search',
-  wrap((req, res) => {
+  wrap(async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (!q) return res.json({ groups: [] });
+    const [ticketArchives, ticketMessages] = await Promise.all([
+      queryDatabase(
+        `SELECT channel_id, channel_name, topic, archived_at, message_count
+           FROM ticket_archives
+          WHERE concat_ws(' ', channel_id, guild_id, channel_name, topic,
+                           archived_by_user_id, raw_channel::text) ILIKE $1
+          ORDER BY archived_at DESC NULLS LAST
+          LIMIT 40`,
+        [`%${q}%`],
+      ),
+      queryDatabase(
+        `SELECT m.channel_id, m.message_id, m.ordinal, m.author_username,
+                m.author_display_name, m.content, m.sent_at, a.channel_name
+           FROM ticket_messages m
+           LEFT JOIN ticket_archives a ON a.channel_id = m.channel_id
+          WHERE concat_ws(' ', m.channel_id, m.message_id, m.author_id,
+                           m.author_username, m.author_display_name, m.content,
+                           m.attachments::text, m.embeds::text, m.raw_message::text,
+                           a.channel_name, a.topic) ILIKE $1
+          ORDER BY m.sent_at DESC NULLS LAST
+          LIMIT 80`,
+        [`%${q}%`],
+      ),
+    ]);
     const groups = [
       {
-        kind: '身份',
+        kind: 'identities',
         hits: db.profiles
           .filter((p) => matchText(q, p.alias, p.bio, userOf(p.userId)?.username))
-          .map((p) => ({ id: p.id, title: `${p.sigil} ${p.alias}`, sub: `真实账号：${userOf(p.userId)?.username}`, href: `/ghost/identities` })),
+          .map((p) => ({ id: p.id, title: `${p.sigil} ${p.alias}`, sub: `Account: ${userOf(p.userId)?.username}`, href: `/ghost/identities` })),
       },
       {
-        kind: '情报',
+        kind: 'tips',
         hits: db.offers
           .filter((o) => matchText(q, o.title, o.summary, ...o.tiers.map((t) => t.content)))
-          .map((o) => ({ id: o.id, title: o.title, sub: `卖家真身：${unmask(o.profileId).username}`, href: `/ghost/offers` })),
+          .map((o) => ({ id: o.id, title: o.title, sub: `Seller account: ${unmask(o.profileId).username}`, href: `/ghost/offers` })),
       },
       {
-        kind: '委托',
+        kind: 'requests',
         hits: db.requests
           .filter((r) => matchText(q, r.title, r.brief))
-          .map((r) => ({ id: r.id, title: r.title, sub: `委托方真身：${unmask(r.profileId).username}`, href: `/ghost/requests` })),
+          .map((r) => ({ id: r.id, title: r.title, sub: `Requester account: ${unmask(r.profileId).username}`, href: `/ghost/requests` })),
       },
       {
-        kind: '报道',
+        kind: 'news',
         hits: db.news.filter((a) => matchText(q, a.title, a.body)).map((a) => ({ id: a.id, title: a.title, sub: a.status, href: `/news/${a.id}` })),
       },
       {
-        kind: '流水',
+        kind: 'ledger',
         hits: db.transactions
           .filter((t) => matchText(q, t.memo, userOf(t.userId)?.username))
           .slice(0, 40)
           .map((t) => ({ id: t.id, title: `${t.delta > 0 ? '+' : ''}${t.delta} TMT · ${t.memo}`, sub: userOf(t.userId)?.username, href: `/ghost/ledger` })),
+      },
+      {
+        kind: 'ticket-archives',
+        hits: ticketArchives.rows.map((ticket) => ({
+          id: ticket.channel_id,
+          title: ticket.channel_name || ticket.channel_id,
+          sub: `${ticket.message_count ?? 0} messages${ticket.topic ? ` · ${ticket.topic}` : ''}`,
+          at: ticket.archived_at,
+          href: '/ghost/ticket-archives',
+        })),
+      },
+      {
+        kind: 'ticket-messages',
+        hits: ticketMessages.rows.map((message) => ({
+          id: `${message.channel_id}-${message.message_id}`,
+          title: `${message.author_display_name || message.author_username || 'Unknown author'} · ${message.channel_name || message.channel_id}`,
+          sub: String(message.content || '(no text content)').slice(0, 280),
+          at: message.sent_at,
+          href: '/ghost/ticket-messages',
+        })),
       },
     ].filter((g) => g.hits.length);
     res.json({ groups });
